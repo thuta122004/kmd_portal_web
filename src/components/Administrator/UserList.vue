@@ -10,41 +10,31 @@
       </button>
     </div>
 
-    <div class="flex flex-col sm:flex-row gap-3">
-      <div class="relative flex-1">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search users..."
-          class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-sm text-white placeholder-slate-600 outline-none focus:border-white/20 focus:bg-slate-950/70 transition"
-        />
-      </div>
-
-      <div class="relative min-w-[150px]">
-        <select
-          v-model="statusFilter"
-          class="w-full h-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 focus:text-white transition appearance-none cursor-pointer"
-        >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <div
-          class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-500"
-        >
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </div>
-      </div>
+    <div
+      v-if="errorMessage"
+      class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-sm"
+    >
+      {{ errorMessage }}
     </div>
 
-    <div class="border border-white/5 rounded-xl overflow-hidden">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search users..."
+        class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-sm text-white placeholder-slate-600 outline-none focus:border-white/20 transition"
+      />
+      <select
+        v-model="statusFilter"
+        class="px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 cursor-pointer appearance-none"
+      >
+        <option value="all">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+
+    <div class="border border-white/5 rounded-xl overflow-hidden min-h-[100px]">
       <table class="w-full text-left text-sm">
         <thead class="bg-white/5 text-slate-400 uppercase text-[10px] tracking-wider">
           <tr>
@@ -56,52 +46,64 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
-          <tr v-for="user in paginatedUsers" :key="user.id" class="text-slate-300">
-            <td class="p-4">{{ user.name }}</td>
-            <td class="p-4 text-slate-500">{{ user.email }}</td>
-            <td class="p-4">
-              <span class="text-xs bg-white/5 px-2 py-1 rounded">{{ user.role_name }}</span>
-            </td>
-            <td class="p-4">
-              <button
-                @click="handleToggleStatus(user)"
-                :class="[
-                  'w-8 h-4 rounded-full transition-colors relative',
-                  user.status === 'active' ? 'bg-blue-500' : 'bg-slate-700',
-                ]"
-              >
-                <span
+          <tr v-if="isLoading">
+            <td colspan="5" class="p-10 text-center text-slate-500">Loading users...</td>
+          </tr>
+
+          <template v-else-if="paginatedUsers.length > 0">
+            <tr v-for="user in paginatedUsers" :key="user.id" class="text-slate-300">
+              <td class="p-4">{{ user.name }}</td>
+              <td class="p-4 text-slate-500">{{ user.email }}</td>
+              <td class="p-4">
+                <span class="text-xs bg-white/5 px-2 py-1 rounded">{{ user.role_name }}</span>
+              </td>
+              <td class="p-4">
+                <button
+                  @click="handleToggleStatus(user)"
                   :class="[
-                    'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
-                    user.status === 'active' ? 'left-5' : 'left-1',
+                    'w-8 h-4 rounded-full transition-colors relative',
+                    user.status === 'active' ? 'bg-blue-500' : 'bg-slate-700',
                   ]"
-                ></span>
-              </button>
-            </td>
-            <td class="p-4 text-right">
-              <button @click="openModal(user)" class="text-slate-500 hover:text-white transition">
-                Edit
-              </button>
+                >
+                  <span
+                    :class="[
+                      'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
+                      user.status === 'active' ? 'left-5' : 'left-1',
+                    ]"
+                  ></span>
+                </button>
+              </td>
+              <td class="p-4 text-right">
+                <button @click="openModal(user)" class="text-slate-500 hover:text-white transition">
+                  Edit
+                </button>
+              </td>
+            </tr>
+          </template>
+
+          <tr v-else>
+            <td colspan="5" class="p-10 text-center text-slate-500 italic">
+              No system records found.
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="flex justify-between items-center text-xs text-slate-500">
+    <div v-if="lastPage > 1" class="flex justify-between items-center text-xs text-slate-500">
       <span>Page {{ currentPage }} of {{ lastPage }}</span>
       <div class="flex gap-2">
         <button
           @click="changePage(currentPage - 1)"
           :disabled="currentPage === 1"
-          class="hover:text-white transition"
+          class="hover:text-white transition disabled:opacity-30"
         >
           Prev
         </button>
         <button
           @click="changePage(currentPage + 1)"
           :disabled="currentPage === lastPage"
-          class="hover:text-white transition"
+          class="hover:text-white transition disabled:opacity-30"
         >
           Next
         </button>

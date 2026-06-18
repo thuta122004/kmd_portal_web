@@ -40,9 +40,9 @@
           <tr>
             <th class="p-4 font-medium w-1/4">Name</th>
             <th class="p-4 font-medium w-1/4">Email</th>
-            <th class="p-4 font-medium w-20">Role</th>
+            <th class="p-4 font-medium w-32">Role</th>
             <th class="p-4 font-medium w-20">Status</th>
-            <th class="p-4 font-medium w-32 text-right">Action</th>
+            <th class="p-4 font-medium w-20 text-right">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
@@ -52,7 +52,9 @@
 
           <template v-else-if="paginatedUsers.length > 0">
             <tr v-for="user in paginatedUsers" :key="user.id" class="text-slate-300">
-              <td class="p-4 truncate">{{ user.name }}</td>
+              <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(user)">
+                {{ user.name }}
+              </td>
               <td class="p-4 text-slate-500 truncate">{{ user.email }}</td>
               <td class="p-4">
                 <span class="text-xs bg-white/5 px-2 py-1 rounded">{{ user.role_name }}</span>
@@ -89,9 +91,7 @@
           </template>
 
           <tr v-else>
-            <td colspan="5" class="p-10 text-center text-slate-500 italic">
-              No system records found.
-            </td>
+            <td colspan="5" class="p-10 text-center text-slate-500 italic">No records found.</td>
           </tr>
         </tbody>
       </table>

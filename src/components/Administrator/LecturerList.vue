@@ -55,9 +55,9 @@
               <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(lec)">
                 {{ lec.name }}
               </td>
-              <td class="p-4 text-slate-500 truncate">{{ lec.department }}</td>
-              <td class="p-4 text-slate-500 truncate">{{ lec.qualification }}</td>
-              <td class="p-4">{{ lec.employee_id }}</td>
+              <td class="p-4 text-slate-500 truncate">{{ lec.department || '-' }}</td>
+              <td class="p-4 text-slate-500 truncate">{{ lec.qualification || '-' }}</td>
+              <td class="p-4">{{ lec.employee_id || '-' }}</td>
               <td class="p-4">
                 <button
                   @click="handleToggleStatus(lec)"

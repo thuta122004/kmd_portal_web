@@ -4,7 +4,7 @@
   >
     <div class="w-full max-w-md p-8 bg-slate-900 border border-white/5 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-semibold text-white mb-6">
-        {{ isEdit ? 'Edit Student' : 'Create Student' }}
+        {{ isEdit ? 'Edit Guardian' : 'Create Guardian' }}
       </h3>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
@@ -26,46 +26,20 @@
         <div>
           <input
             type="text"
-            v-model="form.student_reg_number"
-            placeholder="Reg Number"
+            v-model="form.phone"
+            placeholder="Phone Number"
             class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm"
           />
-          <p v-if="errors.student_reg_number" class="text-rose-500 text-[10px] mt-1">
-            {{ errors.student_reg_number[0] }}
-          </p>
-        </div>
-
-        <div>
-          <input
-            type="date"
-            v-model="form.date_of_birth"
-            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm"
-          />
-          <p v-if="errors.date_of_birth" class="text-rose-500 text-[10px] mt-1">
-            {{ errors.date_of_birth[0] }}
-          </p>
-        </div>
-
-        <div>
-          <select
-            v-model="form.gender"
-            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 transition appearance-none"
-          >
-            <option value="" disabled>Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-          <p v-if="errors.gender" class="text-rose-500 text-[10px] mt-1">
-            {{ errors.gender[0] }}
-          </p>
+          <p v-if="errors.phone" class="text-rose-500 text-[10px] mt-1">{{ errors.phone[0] }}</p>
         </div>
 
         <input
           type="text"
-          v-model="form.phone"
-          placeholder="Phone"
+          v-model="form.occupation"
+          placeholder="Occupation"
           class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm"
         />
+
         <textarea
           v-model="form.address"
           placeholder="Address"
@@ -97,34 +71,30 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import api from '@/services/api'
 
-const props = defineProps({ studentToEdit: Object })
+const props = defineProps({ guardianToEdit: Object })
 const emit = defineEmits(['close', 'refresh'])
 
-const isEdit = computed(() => !!props.studentToEdit)
+const isEdit = computed(() => !!props.guardianToEdit)
 const isSaving = ref(false)
 const availableUsers = ref([])
 const errors = ref({})
 
 const form = reactive({
-  user_id: props.studentToEdit?.user_id || '',
-  student_reg_number: props.studentToEdit?.student_reg_number || '',
-  date_of_birth: props.studentToEdit?.date_of_birth || '',
-  gender: props.studentToEdit?.gender || '',
-  phone: props.studentToEdit?.phone || '',
-  address: props.studentToEdit?.address || '',
+  user_id: props.guardianToEdit?.user_id || '',
+  phone: props.guardianToEdit?.phone || '',
+  occupation: props.guardianToEdit?.occupation || '',
+  address: props.guardianToEdit?.address || '',
 })
 
 const fetchAvailableUsers = async () => {
   try {
-    const [usersRes, studentsRes] = await Promise.all([api.get('/users'), api.get('/students')])
-
+    const [usersRes, guardiansRes] = await Promise.all([api.get('/users'), api.get('/guardians')])
     const allUsers = usersRes.data?.data?.users || usersRes.data || []
-    const existingStudents = studentsRes.data?.data?.students || []
-
-    const usedIds = new Set(existingStudents.map((s) => Number(s.user_id)))
+    const existingGuardians = guardiansRes.data?.data?.guardians || []
+    const usedIds = new Set(existingGuardians.map((g) => Number(g.user_id)))
 
     availableUsers.value = allUsers.filter(
-      (u) => String(u.role_id) === '2' && u.status === 'active' && !usedIds.has(Number(u.id)),
+      (u) => String(u.role_id) === '3' && u.status === 'active' && !usedIds.has(Number(u.id)),
     )
   } catch (error) {
     console.error(error)
@@ -138,8 +108,8 @@ onMounted(() => {
 const handleSubmit = async () => {
   isSaving.value = true
   try {
-    if (isEdit.value) await api.put(`/students/${props.studentToEdit.id}`, form)
-    else await api.post('/students', form)
+    if (isEdit.value) await api.put(`/guardians/${props.guardianToEdit.id}`, form)
+    else await api.post('/guardians', form)
     emit('refresh')
     emit('close')
   } catch (e) {

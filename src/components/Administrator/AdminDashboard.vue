@@ -39,6 +39,17 @@
           >
             Students
           </button>
+          <button
+            @click="currentTab = 'guardians'"
+            :class="[
+              'w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between',
+              currentTab === 'guardians'
+                ? 'bg-white/5 text-white'
+                : 'text-slate-400 hover:text-white hover:bg-white/5',
+            ]"
+          >
+            Guardians
+          </button>
         </nav>
       </div>
     </aside>
@@ -53,6 +64,9 @@
       <div v-if="currentTab === 'students'">
         <StudentList />
       </div>
+      <div v-if="currentTab === 'guardians'">
+        <GuardianList />
+      </div>
     </section>
   </div>
 </template>
@@ -62,6 +76,7 @@ import { ref } from 'vue'
 import UserList from './UserList.vue'
 import LecturerList from './LecturerList.vue'
 import StudentList from './StudentList.vue'
+import GuardianList from './GuardianList.vue'
 
 const currentTab = ref('users')
 </script>

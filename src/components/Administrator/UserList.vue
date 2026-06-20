@@ -205,7 +205,7 @@ const fetchUsers = async () => {
     const response = await api.get('/users')
     users.value = response.data?.data?.users || response.data || []
   } catch (error) {
-    errorMessage.value = 'Failed to synchronize user lists.'
+    errorMessage.value = 'Failed to load users.'
   } finally {
     isLoading.value = false
   }

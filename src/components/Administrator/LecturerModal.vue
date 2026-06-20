@@ -78,7 +78,7 @@
             :disabled="isSaving"
             class="flex-1 py-2.5 bg-white text-slate-950 text-sm font-semibold rounded-lg hover:bg-slate-200 transition disabled:opacity-50"
           >
-            {{ isSaving ? 'Saving...' : 'Save Changes' }}
+            {{ isSaving ? 'Saving...' : isEdit ? 'Edit' : 'Save' }}
           </button>
         </div>
       </form>

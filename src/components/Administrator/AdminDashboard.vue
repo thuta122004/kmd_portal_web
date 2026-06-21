@@ -55,7 +55,7 @@
           </button>
           <nav v-if="activeSection === 'op'" class="flex flex-col space-y-1">
             <button
-              @click="currentTab = 'section-info'"
+              @click="currentTab = 'assign-lecturer'"
               class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
             >
               Assign Lecturer
@@ -85,6 +85,7 @@
       <SubjectList v-if="currentTab === 'subjects'" />
       <SectionList v-if="currentTab === 'sections'" />
       <SectionInfo v-if="currentTab === 'section-info'" />
+      <AssignLecturerList v-if="currentTab === 'assign-lecturer'" />
     </section>
   </div>
 </template>
@@ -98,6 +99,7 @@ import GuardianList from './GuardianList.vue'
 import SubjectList from './SubjectList.vue'
 import SectionList from './SectionList.vue'
 import SectionInfo from './SectionInfo.vue'
+import AssignLecturerList from './AssignLecturerList.vue'
 
 const currentTab = ref('users')
 const activeSection = ref('admin')

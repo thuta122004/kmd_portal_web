@@ -31,9 +31,9 @@
         <thead class="bg-white/5 text-slate-400 uppercase text-[10px] tracking-wider">
           <tr>
             <th class="p-4 font-medium w-1/4">Guardian</th>
-            <th class="p-4 font-medium w-1/4">Student</th>
             <th class="p-4 font-medium w-32">Relationship</th>
-            <th class="p-4 font-medium w-20">Primary</th>
+            <th class="p-4 font-medium w-1/4">Student</th>
+            <th class="p-4 font-medium w-20">Primary Contact</th>
             <th class="p-4 font-medium w-20 text-right">Action</th>
           </tr>
         </thead>
@@ -46,9 +46,9 @@
           <template v-else-if="paginatedData.length > 0">
             <template v-for="guardian in paginatedData" :key="guardian.id">
               <tr v-for="student in guardian.students" :key="student.id" class="text-slate-300">
-                <td class="p-4 truncate">{{ guardian.name }}</td>
-                <td class="p-4 truncate">{{ student.name }}</td>
-                <td class="p-4 truncate">{{ student.relationship_type }}</td>
+                <td class="p-4">{{ guardian.name }}</td>
+                <td class="p-4 text-slate-500 truncate">{{ student.relationship_type }}</td>
+                <td class="p-4">{{ student.name }}</td>
                 <td class="p-4">
                   <span
                     :class="[

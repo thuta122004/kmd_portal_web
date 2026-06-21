@@ -1,0 +1,254 @@
+<template>
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold text-white">Timetables</h2>
+      <button
+        @click="openModal(null)"
+        class="px-4 py-2 bg-white text-slate-950 text-sm font-semibold rounded-lg hover:bg-slate-200 transition"
+      >
+        Add Timetable
+      </button>
+    </div>
+
+    <div
+      v-if="errorMessage"
+      class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-sm"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search by subject, section, lecturer, day or room..."
+        class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-sm text-white placeholder-slate-600 outline-none focus:border-white/20 transition"
+      />
+      <select
+        v-model="statusFilter"
+        class="px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 cursor-pointer appearance-none"
+      >
+        <option value="all">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+
+    <div class="border border-white/5 rounded-xl overflow-hidden min-h-[100px]">
+      <table class="w-full text-left text-sm table-fixed">
+        <thead class="bg-white/5 text-slate-400 uppercase text-[10px] tracking-wider">
+          <tr>
+            <th class="p-4 font-medium w-1/4">Subject & Section</th>
+            <th class="p-4 font-medium w-32">Lecturer</th>
+            <th class="p-4 font-medium w-32">Day</th>
+            <th class="p-4 font-medium w-32">Time</th>
+            <th class="p-4 font-medium w-32">Room</th>
+            <th class="p-4 font-medium w-20">Status</th>
+            <th class="p-4 font-medium w-20 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          <tr v-if="isLoading">
+            <td colspan="7" class="p-10 text-center text-slate-500">Loading timetables...</td>
+          </tr>
+          <template v-else-if="paginatedTimetables.length > 0">
+            <tr v-for="time in paginatedTimetables" :key="time.id" class="text-slate-300">
+              <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(time)">
+                <div class="font-medium text-white">{{ time.subject_name }}</div>
+                <div class="text-xs text-slate-500">{{ time.section_name }}</div>
+              </td>
+              <td class="p-4 text-slate-400 truncate">{{ time.lecturer_name }}</td>
+              <td class="p-4 text-slate-300 truncate">{{ time.day_of_week }}</td>
+              <td class="p-4 text-slate-400 truncate">
+                {{ formatTime(time.start_time) }} - {{ formatTime(time.end_time) }}
+              </td>
+              <td class="p-4 truncate">{{ time.room_number || '-' }}</td>
+              <td class="p-4">
+                <button
+                  @click="handleToggleStatus(time)"
+                  :class="[
+                    'w-8 h-4 rounded-full transition-colors relative',
+                    time.status === 'active' ? 'bg-blue-500' : 'bg-slate-700',
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
+                      time.status === 'active' ? 'left-5' : 'left-1',
+                    ]"
+                  ></span>
+                </button>
+              </td>
+              <td class="p-4 text-right">
+                <button @click="openModal(time)" class="text-slate-500 hover:text-white transition">
+                  Edit
+                </button>
+              </td>
+            </tr>
+          </template>
+          <tr v-else>
+            <td colspan="7" class="p-10 text-center text-slate-500 italic">No records found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div v-if="lastPage > 1" class="flex justify-between items-center text-xs text-slate-500">
+      <span>Page {{ currentPage }} of {{ lastPage }}</span>
+      <div class="flex gap-2">
+        <button
+          @click="changePage(currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="hover:text-white transition disabled:opacity-30"
+        >
+          Prev
+        </button>
+        <button
+          @click="changePage(currentPage + 1)"
+          :disabled="currentPage === lastPage"
+          class="hover:text-white transition disabled:opacity-30"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+    <TimetableModal
+      v-if="showModal"
+      :timetableToEdit="selectedTimetable"
+      @close="showModal = false"
+      @refresh="fetchTimetables"
+    />
+
+    <transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="opacity-0 translate-y-2"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition ease-in duration-150"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-2"
+    >
+      <div
+        v-if="toast.show"
+        class="fixed bottom-6 right-6 px-6 py-4 rounded-xl border shadow-2xl flex flex-col gap-4 z-50 min-w-[320px]"
+        :class="
+          toast.type === 'success'
+            ? 'bg-slate-900 border-blue-500/50'
+            : toast.type === 'warning'
+              ? 'bg-slate-900 border-amber-500/50'
+              : 'bg-rose-900 border-rose-500'
+        "
+      >
+        <span class="text-sm font-medium text-white">{{ toast.message }}</span>
+        <div v-if="toast.isConfirm" class="flex gap-2 justify-end">
+          <button
+            @click="toast.show = false"
+            class="px-3 py-1 text-xs font-semibold text-slate-400 hover:text-white transition"
+          >
+            Cancel
+          </button>
+          <button
+            @click="handleConfirm"
+            class="px-3 py-1 text-xs font-semibold bg-white text-slate-950 rounded hover:bg-slate-200 transition"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </transition>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
+import api from '@/services/api'
+import TimetableModal from './TimetableModal.vue'
+
+const timetables = ref([])
+const isLoading = ref(false)
+const errorMessage = ref(null)
+const showModal = ref(false)
+const selectedTimetable = ref(null)
+const searchQuery = ref('')
+const statusFilter = ref('all')
+const currentPage = ref(1)
+const itemsPerPage = 7
+
+const toast = ref({ show: false, message: '', type: 'success', isConfirm: false, onConfirm: null })
+
+const filteredTimetables = computed(() => {
+  return timetables.value.filter((t) => {
+    const term = searchQuery.value.toLowerCase()
+    const matchesSearch =
+      t.subject_name?.toLowerCase().includes(term) ||
+      t.section_name?.toLowerCase().includes(term) ||
+      t.lecturer_name?.toLowerCase().includes(term) ||
+      t.day_of_week?.toLowerCase().includes(term) ||
+      t.room_number?.toLowerCase().includes(term)
+
+    const matchesStatus = statusFilter.value === 'all' || t.status === statusFilter.value
+
+    return matchesSearch && matchesStatus
+  })
+})
+
+const lastPage = computed(() => Math.ceil(filteredTimetables.value.length / itemsPerPage) || 1)
+const paginatedTimetables = computed(() =>
+  filteredTimetables.value.slice(
+    (currentPage.value - 1) * itemsPerPage,
+    currentPage.value * itemsPerPage,
+  ),
+)
+
+watch([searchQuery, statusFilter], () => (currentPage.value = 1))
+
+const fetchTimetables = async () => {
+  isLoading.value = true
+  errorMessage.value = null
+  try {
+    const response = await api.get('/timetables')
+    timetables.value = response.data?.data?.timetables || []
+  } catch (e) {
+    errorMessage.value = 'Failed to load timetables.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const changePage = (p) => {
+  if (p >= 1 && p <= lastPage.value) currentPage.value = p
+}
+
+const openModal = (t) => {
+  selectedTimetable.value = t
+  showModal.value = true
+}
+
+const showToast = (message, type = 'success', isConfirm = false, onConfirm = null) => {
+  toast.value = { show: true, message, type, isConfirm, onConfirm }
+  if (!isConfirm) setTimeout(() => (toast.value.show = false), 4000)
+}
+
+const handleConfirm = () => {
+  if (toast.value.onConfirm) toast.value.onConfirm()
+  toast.value.show = false
+}
+
+const handleToggleStatus = async (t) => {
+  try {
+    await api.patch(`/timetables/${t.id}/toggle`)
+    t.status = t.status === 'active' ? 'inactive' : 'active'
+    showToast(`Timetable marked as ${t.status}.`, 'success')
+  } catch (e) {
+    const backendMessage = e.response?.data?.message || 'Failed to toggle status.'
+    showToast(backendMessage, 'error')
+  }
+}
+
+const formatTime = (timeStr) => {
+  if (!timeStr) return '-'
+  return timeStr.substring(0, 5)
+}
+
+onMounted(fetchTimetables)
+</script>

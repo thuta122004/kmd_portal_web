@@ -56,8 +56,8 @@
               <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(sec)">
                 {{ sec.name }}
               </td>
-              <td class="p-4 text-slate-500">{{ sec.start_date }}</td>
-              <td class="p-4 text-slate-500">{{ sec.end_date || '-' }}</td>
+              <td class="p-4 text-slate-500 truncate">{{ sec.start_date }}</td>
+              <td class="p-4 text-slate-500 truncate">{{ sec.end_date || '-' }}</td>
               <td class="p-4">{{ sec.code }}</td>
               <td class="p-4">
                 <button

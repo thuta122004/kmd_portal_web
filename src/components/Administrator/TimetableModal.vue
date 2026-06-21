@@ -81,6 +81,18 @@
           </p>
         </div>
 
+        <div>
+          <input
+            type="url"
+            v-model="form.link"
+            placeholder="Meeting Link"
+            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm"
+          />
+          <p v-if="errors.link" class="text-rose-500 text-[10px] mt-1">
+            {{ errors.link[0] }}
+          </p>
+        </div>
+
         <div class="flex gap-3 pt-2">
           <button
             type="button"
@@ -128,6 +140,7 @@ const form = reactive({
   start_time: formatTimeForInput(props.timetableToEdit?.start_time) || '',
   end_time: formatTimeForInput(props.timetableToEdit?.end_time) || '',
   room_number: props.timetableToEdit?.room_number || '',
+  link: props.timetableToEdit?.link || '',
 })
 
 const fetchDependencies = async () => {

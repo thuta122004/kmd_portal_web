@@ -61,10 +61,10 @@
               Assign Lecturer
             </button>
             <button
-              @click="currentTab = 'timetable'"
+              @click="currentTab = 'timetables'"
               class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
             >
-              Timetable
+              Timetables
             </button>
             <button
               @click="currentTab = 'attach-student'"
@@ -87,7 +87,7 @@
       <SectionInfo v-if="currentTab === 'section-info'" />
       <AssignLecturerList v-if="currentTab === 'assign-lecturer'" />
       <AttachStudentList v-if="currentTab === 'attach-student'" />
-      <TimetableList v-if="currentTab === 'timetable'" />
+      <TimetableList v-if="currentTab === 'timetables'" />
     </section>
   </div>
 </template>

@@ -43,13 +43,14 @@
             <th class="p-4 font-medium w-32">Day</th>
             <th class="p-4 font-medium w-32">Time</th>
             <th class="p-4 font-medium w-32">Room</th>
+            <th class="p-4 font-medium w-32">Meeting Link</th>
             <th class="p-4 font-medium w-20">Status</th>
             <th class="p-4 font-medium w-20 text-right">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
           <tr v-if="isLoading">
-            <td colspan="7" class="p-10 text-center text-slate-500">Loading timetables...</td>
+            <td colspan="8" class="p-10 text-center text-slate-500">Loading timetables...</td>
           </tr>
           <template v-else-if="paginatedTimetables.length > 0">
             <tr v-for="time in paginatedTimetables" :key="time.id" class="text-slate-300">
@@ -63,6 +64,16 @@
                 {{ formatTime(time.start_time) }} - {{ formatTime(time.end_time) }}
               </td>
               <td class="p-4 truncate">{{ time.room_number || '-' }}</td>
+              <td class="p-4 truncate">
+                <a
+                  v-if="time.link"
+                  :href="time.link"
+                  target="_blank"
+                  class="text-blue-400 hover:underline"
+                  >Join</a
+                >
+                <span v-else>-</span>
+              </td>
               <td class="p-4">
                 <button
                   @click="handleToggleStatus(time)"
@@ -87,7 +98,7 @@
             </tr>
           </template>
           <tr v-else>
-            <td colspan="7" class="p-10 text-center text-slate-500 italic">No records found.</td>
+            <td colspan="8" class="p-10 text-center text-slate-500 italic">No records found.</td>
           </tr>
         </tbody>
       </table>

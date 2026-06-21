@@ -8,18 +8,18 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
-      meta: { requiresGuest: true } 
+      meta: { requiresGuest: true },
     },
     {
       path: '/',
       name: 'dashboard',
-      component: () => import('@/views/DashboardView.vue'), 
-      meta: { requiresAuth: true } 
+      component: () => import('@/views/DashboardView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/:pathMatch(.*)*',
-      redirect: '/'
-    }
+      redirect: '/',
+    },
   ],
 })
 

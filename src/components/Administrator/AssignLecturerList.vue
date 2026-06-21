@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-white">Lecturer Assignments</h2>
+      <h2 class="text-xl font-semibold text-white">Assigned Lecturers</h2>
       <button
         @click="openModal(null)"
         class="px-4 py-2 bg-white text-slate-950 text-sm font-semibold rounded-lg hover:bg-slate-200 transition"
@@ -48,7 +48,9 @@
         </thead>
         <tbody class="divide-y divide-white/5">
           <tr v-if="isLoading">
-            <td colspan="6" class="p-10 text-center text-slate-500">Loading assignments...</td>
+            <td colspan="6" class="p-10 text-center text-slate-500">
+              Loading assigned lecturers...
+            </td>
           </tr>
           <template v-else-if="paginatedData.length > 0">
             <tr v-for="item in paginatedData" :key="item.id" class="text-slate-300">

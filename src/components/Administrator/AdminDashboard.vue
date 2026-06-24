@@ -105,8 +105,8 @@ import AssignLecturerList from './AssignLecturerList.vue'
 import AttachStudentList from './AttachStudentList.vue'
 import TimetableList from './TimetableList.vue'
 
-const currentTab = ref('users')
-const activeSection = ref('admin')
+const currentTab = ref('section-info')
+const activeSection = ref('info')
 </script>
 
 <style>

@@ -43,12 +43,12 @@
               Loading attached students...
             </td>
           </tr>
-          <template v-else-if="paginatedData.length > 0">
+          <template v-else-if="totalStudentCount > 0">
             <template v-for="guardian in paginatedData" :key="guardian.id">
               <tr v-for="student in guardian.students" :key="student.id" class="text-slate-300">
-                <td class="p-4">{{ guardian.name }}</td>
+                <td class="p-4 truncate">{{ guardian.name }}</td>
                 <td class="p-4 text-slate-500 truncate">{{ student.relationship_type }}</td>
-                <td class="p-4">{{ student.name }}</td>
+                <td class="p-4 truncate">{{ student.name }}</td>
                 <td class="p-4">
                   <span
                     :class="[
@@ -152,16 +152,19 @@ const showModal = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 7
-
 const toast = ref({ show: false, message: '', type: 'success', isConfirm: false, onConfirm: null })
 
 const filteredData = computed(() => {
   return data.value.filter((g) => {
     return (
       g.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      g.students.some((s) => s.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+      g.students?.some((s) => s.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
     )
   })
+})
+
+const totalStudentCount = computed(() => {
+  return filteredData.value.reduce((acc, g) => acc + (g.students?.length || 0), 0)
 })
 
 const lastPage = computed(() => Math.ceil(filteredData.value.length / itemsPerPage) || 1)
@@ -176,11 +179,12 @@ watch(searchQuery, () => (currentPage.value = 1))
 
 const fetchData = async () => {
   isLoading.value = true
+  errorMessage.value = null
   try {
     const res = await api.get('/guardians')
     data.value = res.data?.data?.guardians || []
   } catch (e) {
-    errorMessage.value = 'Failed to load guardians.'
+    errorMessage.value = 'Failed to load records.'
   } finally {
     isLoading.value = false
   }

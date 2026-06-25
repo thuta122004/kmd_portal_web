@@ -59,20 +59,16 @@
               <td class="p-4 text-slate-500 truncate">{{ g.address || '-' }}</td>
               <td class="p-4 text-slate-500 truncate">{{ g.occupation || '-' }}</td>
               <td class="p-4">
-                <button
-                  @click="handleToggleStatus(g)"
+                <span
                   :class="[
-                    'w-8 h-4 rounded-full transition-colors relative',
-                    g.status === 'active' ? 'bg-blue-500' : 'bg-slate-700',
+                    'text-xs px-2 py-0.5 rounded-md font-medium capitalize',
+                    g.status === 'active'
+                      ? 'bg-blue-500/10 text-blue-400'
+                      : 'bg-slate-500/10 text-slate-400',
                   ]"
                 >
-                  <span
-                    :class="[
-                      'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
-                      g.status === 'active' ? 'left-5' : 'left-1',
-                    ]"
-                  ></span>
-                </button>
+                  {{ g.status }}
+                </span>
               </td>
               <td class="p-4 text-right">
                 <button @click="openModal(g)" class="text-slate-500 hover:text-white transition">
@@ -168,10 +164,6 @@ const changePage = (p) => {
 const openModal = (g) => {
   selectedGuardian.value = g
   showModal.value = true
-}
-const handleToggleStatus = async (g) => {
-  await api.patch(`/guardians/${g.id}/toggle`)
-  g.status = g.status === 'active' ? 'inactive' : 'active'
 }
 
 onMounted(fetchGuardians)

@@ -65,20 +65,16 @@
                 <span class="text-xs bg-white/5 px-2 py-1 rounded">{{ stu.gender }}</span>
               </td>
               <td class="p-4">
-                <button
-                  @click="handleToggleStatus(stu)"
+                <span
                   :class="[
-                    'w-8 h-4 rounded-full transition-colors relative',
-                    stu.status === 'active' ? 'bg-blue-500' : 'bg-slate-700',
+                    'text-xs px-2 py-0.5 rounded-md font-medium',
+                    stu.status === 'active'
+                      ? 'bg-blue-500/10 text-blue-400'
+                      : 'bg-slate-500/10 text-slate-400',
                   ]"
                 >
-                  <span
-                    :class="[
-                      'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
-                      stu.status === 'active' ? 'left-5' : 'left-1',
-                    ]"
-                  ></span>
-                </button>
+                  {{ stu.status }}
+                </span>
               </td>
               <td class="p-4 text-right">
                 <button @click="openModal(stu)" class="text-slate-500 hover:text-white transition">
@@ -174,10 +170,6 @@ const changePage = (p) => {
 const openModal = (s) => {
   selectedStudent.value = s
   showModal.value = true
-}
-const handleToggleStatus = async (s) => {
-  await api.patch(`/students/${s.id}/toggle`)
-  s.status = s.status === 'active' ? 'inactive' : 'active'
 }
 
 const calculateAge = (dob) => {

@@ -43,13 +43,14 @@
             <th class="p-4 font-medium w-1/4">Start Date</th>
             <th class="p-4 font-medium w-1/4">End Date</th>
             <th class="p-4 font-medium w-32">Code</th>
-            <th class="p-4 font-medium w-20">Status</th>
+            <th class="p-4 font-medium w-32">Status</th>
+            <th class="p-4 font-medium w-20">Toggle</th>
             <th class="p-4 font-medium w-20 text-right">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
           <tr v-if="isLoading">
-            <td colspan="6" class="p-10 text-center text-slate-500">Loading sections...</td>
+            <td colspan="7" class="p-10 text-center text-slate-500">Loading sections...</td>
           </tr>
           <template v-else-if="paginatedSections.length > 0">
             <tr v-for="sec in paginatedSections" :key="sec.id" class="text-slate-300">
@@ -60,16 +61,41 @@
               <td class="p-4 text-slate-500 truncate">{{ sec.end_date || '-' }}</td>
               <td class="p-4">{{ sec.code }}</td>
               <td class="p-4">
-                <button
-                  @click="handleToggleStatus(sec)"
+                <span
+                  class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
                   :class="[
-                    'px-2 py-1 rounded text-[10px] font-bold uppercase',
                     sec.status === 'active'
                       ? 'bg-blue-500/20 text-blue-400'
-                      : 'bg-slate-700/50 text-slate-400',
+                      : sec.status === 'inactive'
+                        ? 'bg-slate-700/50 text-slate-400'
+                        : 'bg-amber-500/20 text-amber-400',
                   ]"
                 >
                   {{ sec.status }}
+                </span>
+              </td>
+              <td class="p-4">
+                <button
+                  @click="handleToggleStatus(sec)"
+                  :class="[
+                    'w-8 h-4 rounded-full transition-colors relative',
+                    sec.status === 'active'
+                      ? 'bg-blue-500'
+                      : sec.status === 'inactive'
+                        ? 'bg-slate-700'
+                        : 'bg-amber-500',
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
+                      sec.status === 'active'
+                        ? 'left-5'
+                        : sec.status === 'inactive'
+                          ? 'left-1'
+                          : 'left-3',
+                    ]"
+                  ></span>
                 </button>
               </td>
               <td class="p-4 text-right">
@@ -80,7 +106,7 @@
             </tr>
           </template>
           <tr v-else>
-            <td colspan="6" class="p-10 text-center text-slate-500 italic">No records found.</td>
+            <td colspan="7" class="p-10 text-center text-slate-500 italic">No records found.</td>
           </tr>
         </tbody>
       </table>
@@ -170,9 +196,19 @@ const openModal = (s) => {
   showModal.value = true
 }
 
-const handleToggleStatus = async (s) => {
-  await api.patch(`/sections/${s.id}/toggle`)
-  fetchSections()
+const handleToggleStatus = async (sec) => {
+  try {
+    const res = await api.patch(`/sections/${sec.id}/toggle`)
+    if (res.data?.data?.section?.status) {
+      sec.status = res.data.data.section.status
+    } else {
+      sec.status =
+        sec.status === 'active' ? 'inactive' : sec.status === 'inactive' ? 'pending' : 'active'
+    }
+  } catch (e) {
+    console.error(e)
+    errorMessage.value = 'Failed to update section status.'
+  }
 }
 
 onMounted(fetchSections)

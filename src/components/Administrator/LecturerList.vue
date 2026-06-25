@@ -59,20 +59,16 @@
               <td class="p-4 text-slate-500 truncate">{{ lec.qualification || '-' }}</td>
               <td class="p-4">{{ lec.employee_id || '-' }}</td>
               <td class="p-4">
-                <button
-                  @click="handleToggleStatus(lec)"
+                <span
                   :class="[
-                    'w-8 h-4 rounded-full transition-colors relative',
-                    lec.status === 'active' ? 'bg-blue-500' : 'bg-slate-700',
+                    'text-xs px-2 py-0.5 rounded-md font-medium capitalize',
+                    lec.status === 'active'
+                      ? 'bg-blue-500/10 text-blue-400'
+                      : 'bg-slate-500/10 text-slate-400',
                   ]"
                 >
-                  <span
-                    :class="[
-                      'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
-                      lec.status === 'active' ? 'left-5' : 'left-1',
-                    ]"
-                  ></span>
-                </button>
+                  {{ lec.status }}
+                </span>
               </td>
               <td class="p-4 text-right flex justify-end gap-3">
                 <button @click="openModal(lec)" class="text-slate-500 hover:text-white transition">
@@ -171,15 +167,6 @@ const changePage = (newPage) => {
 const openModal = (lec = null) => {
   selectedLecturer.value = lec
   showModal.value = true
-}
-
-const handleToggleStatus = async (lec) => {
-  try {
-    await api.patch(`/lecturers/${lec.id}/toggle`)
-    lec.status = lec.status === 'active' ? 'inactive' : 'active'
-  } catch (error) {
-    console.error(error)
-  }
 }
 
 onMounted(fetchLecturers)

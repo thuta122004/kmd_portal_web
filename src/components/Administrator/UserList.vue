@@ -31,6 +31,7 @@
         <option value="all">All Status</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
+        <option value="suspended">Suspended</option>
       </select>
     </div>
 
@@ -41,57 +42,69 @@
             <th class="p-4 font-medium w-1/4">Name</th>
             <th class="p-4 font-medium w-1/4">Email</th>
             <th class="p-4 font-medium w-32">Role</th>
-            <th class="p-4 font-medium w-20">Status</th>
+            <th class="p-4 font-medium w-32">Status</th>
+            <th class="p-4 font-medium w-20">Toggle</th>
             <th class="p-4 font-medium w-20 text-right">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
-          <tr v-if="isLoading">
-            <td colspan="5" class="p-10 text-center text-slate-500">Loading users...</td>
-          </tr>
-
-          <template v-else-if="paginatedUsers.length > 0">
-            <tr v-for="user in paginatedUsers" :key="user.id" class="text-slate-300">
-              <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(user)">
-                {{ user.name }}
-              </td>
-              <td class="p-4 text-slate-500 truncate">{{ user.email }}</td>
-              <td class="p-4">
-                <span class="text-xs bg-white/5 px-2 py-1 rounded">{{ user.role_name }}</span>
-              </td>
-              <td class="p-4">
-                <button
-                  @click="handleToggleStatus(user)"
+          <tr v-for="user in paginatedUsers" :key="user.id" class="text-slate-300">
+            <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(user)">
+              {{ user.name }}
+            </td>
+            <td class="p-4 text-slate-500 truncate">{{ user.email }}</td>
+            <td class="p-4">
+              <span class="text-xs bg-white/5 px-2 py-1 rounded">{{ user.role_name }}</span>
+            </td>
+            <td class="p-4">
+              <span
+                class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
+                :class="[
+                  user.status === 'active'
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : user.status === 'inactive'
+                      ? 'bg-slate-700/50 text-slate-400'
+                      : 'bg-amber-500/20 text-amber-400',
+                ]"
+              >
+                {{ user.status }}
+              </span>
+            </td>
+            <td class="p-4">
+              <button
+                @click="handleToggleStatus(user)"
+                :class="[
+                  'w-8 h-4 rounded-full transition-colors relative',
+                  user.status === 'active'
+                    ? 'bg-blue-500'
+                    : user.status === 'inactive'
+                      ? 'bg-slate-700'
+                      : 'bg-amber-500',
+                ]"
+              >
+                <span
                   :class="[
-                    'w-8 h-4 rounded-full transition-colors relative',
-                    user.status === 'active' ? 'bg-blue-500' : 'bg-slate-700',
+                    'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
+                    user.status === 'active'
+                      ? 'left-5'
+                      : user.status === 'inactive'
+                        ? 'left-1'
+                        : 'left-3',
                   ]"
-                >
-                  <span
-                    :class="[
-                      'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
-                      user.status === 'active' ? 'left-5' : 'left-1',
-                    ]"
-                  ></span>
-                </button>
-              </td>
-              <td class="p-4 text-right flex justify-end gap-3">
-                <button
-                  @click="handleResetPassword(user)"
-                  class="text-amber-500 hover:text-amber-400 transition"
-                  title="Reset Password"
-                >
-                  Reset
-                </button>
-                <button @click="openModal(user)" class="text-slate-500 hover:text-white transition">
-                  Edit
-                </button>
-              </td>
-            </tr>
-          </template>
-
-          <tr v-else>
-            <td colspan="5" class="p-10 text-center text-slate-500 italic">No records found.</td>
+                ></span>
+              </button>
+            </td>
+            <td class="p-4 text-right flex justify-end gap-3">
+              <button
+                @click="handleResetPassword(user)"
+                class="text-amber-500 hover:text-amber-400 transition"
+              >
+                Reset
+              </button>
+              <button @click="openModal(user)" class="text-slate-500 hover:text-white transition">
+                Edit
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -222,8 +235,7 @@ const openModal = (user = null) => {
 const handleToggleStatus = async (user) => {
   try {
     const response = await api.patch(`/users/${user.id}/toggle`)
-    user.status =
-      response.data?.data?.user?.status || (user.status === 'active' ? 'inactive' : 'active')
+    user.status = response.data?.data?.user?.status || user.status
   } catch (error) {
     console.error(error)
   }

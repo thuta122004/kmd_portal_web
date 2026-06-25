@@ -21,7 +21,7 @@
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="Search student or section..."
+        placeholder="Search by student or section..."
         class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-sm text-white placeholder-slate-600 outline-none focus:border-white/20 transition"
       />
       <select

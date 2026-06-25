@@ -184,7 +184,7 @@ const fetchData = async () => {
     const res = await api.get('/guardians')
     data.value = res.data?.data?.guardians || []
   } catch (e) {
-    errorMessage.value = 'Failed to load records.'
+    errorMessage.value = 'Failed to load attached students.'
   } finally {
     isLoading.value = false
   }

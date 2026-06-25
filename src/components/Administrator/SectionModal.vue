@@ -7,6 +7,13 @@
         {{ isEdit ? 'Edit Section' : 'Create Section' }}
       </h3>
 
+      <div
+        v-if="errorMessage"
+        class="mb-6 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-300 text-xs"
+      >
+        {{ errorMessage }}
+      </div>
+
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
           <input
@@ -79,6 +86,7 @@ const emit = defineEmits(['close', 'refresh'])
 const isEdit = computed(() => !!props.sectionToEdit)
 const isSaving = ref(false)
 const errors = ref({})
+const errorMessage = ref(null)
 
 const form = reactive({
   name: props.sectionToEdit?.name || '',
@@ -94,8 +102,13 @@ const handleSubmit = async () => {
     else await api.post('/sections', form)
     emit('refresh')
     emit('close')
-  } catch (e) {
-    errors.value = e.response?.data?.errors || {}
+  } catch (error) {
+    if (error.response?.status === 422) {
+      errors.value = error.response.data.errors || {}
+      errorMessage.value = error.response.data.message
+    } else {
+      errorMessage.value = 'Database transaction runtime mismatch exception.'
+    }
   } finally {
     isSaving.value = false
   }

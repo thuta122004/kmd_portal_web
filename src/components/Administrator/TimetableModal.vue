@@ -8,10 +8,10 @@
       </h3>
 
       <div
-        v-if="globalError"
-        class="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-300 text-xs"
+        v-if="errorMessage"
+        class="mb-6 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-300 text-xs"
       >
-        {{ globalError }}
+        {{ errorMessage }}
       </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
@@ -128,7 +128,7 @@ const isEdit = computed(() => !!props.timetableToEdit)
 const isSaving = ref(false)
 const availableAssignments = ref([])
 const errors = ref({})
-const globalError = ref(null)
+const errorMessage = ref(null)
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -189,8 +189,6 @@ onMounted(() => {
 const handleSubmit = async () => {
   isSaving.value = true
   errors.value = {}
-  globalError.value = null
-
   try {
     if (isEdit.value) {
       await api.put(`/timetables/${props.timetableToEdit.id}`, form)
@@ -199,13 +197,12 @@ const handleSubmit = async () => {
     }
     emit('refresh')
     emit('close')
-  } catch (e) {
-    if (e.response?.data?.errors) {
-      errors.value = e.response.data.errors
-    } else if (e.response?.data?.message) {
-      globalError.value = e.response.data.message
+  } catch (error) {
+    if (error.response?.status === 422) {
+      errors.value = error.response.data.errors || {}
+      errorMessage.value = error.response.data.message
     } else {
-      globalError.value = 'An unexpected error occurred.'
+      errorMessage.value = 'Database transaction runtime mismatch exception.'
     }
   } finally {
     isSaving.value = false

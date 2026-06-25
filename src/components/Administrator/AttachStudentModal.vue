@@ -5,6 +5,13 @@
     <div class="w-full max-w-md p-8 bg-slate-900 border border-white/5 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-semibold text-white mb-6">Attach Student</h3>
 
+      <div
+        v-if="errorMessage"
+        class="mb-6 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-300 text-xs"
+      >
+        {{ errorMessage }}
+      </div>
+
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
           <select
@@ -12,7 +19,9 @@
             class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm outline-none focus:border-white/20 transition appearance-none"
           >
             <option value="" disabled class="text-slate-500">Select Guardian</option>
-            <option v-for="g in guardians" :key="g.id" :value="g.id">{{ g.name }}</option>
+            <option v-for="g in guardians" :key="g.id" :value="g.id">
+              {{ g.name }} ({{ g.email }})
+            </option>
           </select>
           <p v-if="errors.guardian_id" class="text-rose-500 text-[10px] mt-1">
             {{ errors.guardian_id[0] }}
@@ -88,6 +97,7 @@ const emit = defineEmits(['close', 'refresh'])
 
 const isSaving = ref(false)
 const errors = ref({})
+const errorMessage = ref(null)
 const guardians = ref([])
 const students = ref([])
 
@@ -102,8 +112,11 @@ onMounted(async () => {
   try {
     const [gRes, sRes] = await Promise.all([api.get('/guardians'), api.get('/students')])
     guardians.value = gRes.data?.data?.guardians || []
-    students.value = sRes.data?.data?.students || []
+
+    const allStudents = sRes.data?.data?.students || []
+    students.value = allStudents.filter((s) => s.status === 'active')
   } catch (error) {
+    errorMessage.value = 'Failed to load students.'
     console.error(error)
   }
 })
@@ -125,11 +138,12 @@ const handleSubmit = async () => {
 
     emit('refresh')
     emit('close')
-  } catch (e) {
-    if (e.response?.data?.errors) {
-      errors.value = e.response.data.errors
+  } catch (error) {
+    if (error.response?.status === 422) {
+      errors.value = error.response.data.errors || {}
+      errorMessage.value = error.response.data.message
     } else {
-      console.error(e)
+      errorMessage.value = 'Database transaction runtime mismatch exception.'
     }
   } finally {
     isSaving.value = false

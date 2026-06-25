@@ -67,16 +67,16 @@
               Timetables
             </button>
             <button
-              @click="currentTab = 'attach-student'"
-              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
-            >
-              Attach Student
-            </button>
-            <button
               @click="currentTab = 'enrolments'"
               class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
             >
               Enrolments
+            </button>
+            <button
+              @click="currentTab = 'attach-student'"
+              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
+            >
+              Attach Student
             </button>
           </nav>
         </div>

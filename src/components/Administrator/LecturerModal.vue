@@ -116,13 +116,10 @@ const fetchAvailableUsers = async () => {
     const existingLecturerIds = new Set(existingLecturers.map((l) => Number(l.user_id)))
 
     availableUsers.value = allUsers.filter(
-      (u) =>
-        String(u.role_id) === '4' &&
-        u.status === 'active' &&
-        !existingLecturerIds.has(Number(u.id)),
+      (u) => String(u.role_id) === '4' && !existingLecturerIds.has(Number(u.id)),
     )
   } catch (error) {
-    errorMessage.value = 'Could not load user list.'
+    console.error(error)
   }
 }
 

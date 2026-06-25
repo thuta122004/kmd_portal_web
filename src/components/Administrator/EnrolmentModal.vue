@@ -7,6 +7,13 @@
         {{ isEdit ? 'Edit Enrolment' : 'Create Enrolment' }}
       </h3>
 
+      <div
+        v-if="errorMessage"
+        class="mb-6 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-300 text-xs"
+      >
+        {{ errorMessage }}
+      </div>
+
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
           <select
@@ -31,7 +38,7 @@
           >
             <option value="" disabled>Select Section</option>
             <option v-for="sec in sections" :key="sec.id" :value="sec.id">
-              {{ sec.name }}
+              {{ sec.code }}
             </option>
           </select>
           <p v-if="errors.section_id" class="text-rose-500 text-[10px] mt-1">
@@ -83,6 +90,7 @@ const isSaving = ref(false)
 const students = ref([])
 const sections = ref([])
 const errors = ref({})
+const errorMessage = ref(null)
 
 const form = reactive({
   student_id: props.enrolmentToEdit?.student_id || '',
@@ -148,8 +156,13 @@ const handleSubmit = async () => {
     }
     emit('refresh')
     emit('close')
-  } catch (e) {
-    errors.value = e.response?.data?.errors || {}
+  } catch (error) {
+    if (error.response?.status === 422) {
+      errors.value = error.response.data.errors || {}
+      errorMessage.value = error.response.data.message
+    } else {
+      errorMessage.value = 'Database transaction runtime mismatch exception.'
+    }
   } finally {
     isSaving.value = false
   }

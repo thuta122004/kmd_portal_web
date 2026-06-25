@@ -14,7 +14,7 @@
             class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm outline-none focus:border-white/20 transition appearance-none disabled:opacity-50"
           >
             <option value="" disabled class="text-slate-500">Select Section</option>
-            <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
+            <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.code }}</option>
           </select>
           <p v-if="errors.section_id" class="text-rose-500 text-[10px] mt-1">
             {{ errors.section_id[0] }}
@@ -41,7 +41,9 @@
             class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm outline-none focus:border-white/20 transition appearance-none"
           >
             <option value="" disabled class="text-slate-500">Select Lecturer</option>
-            <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
+            <option v-for="l in lecturers" :key="l.id" :value="l.id">
+              {{ l.name }} ({{ l.email }})
+            </option>
           </select>
           <p v-if="errors.lecturer_id" class="text-rose-500 text-[10px] mt-1">
             {{ errors.lecturer_id[0] }}
@@ -111,7 +113,7 @@ const fetchDropdownData = async () => {
     const [sRes, subRes, lRes] = await Promise.all([
       api.get('/sections?status=active'),
       api.get('/subjects?status=active'),
-      api.get('/lecturers?status=active'),
+      api.get('/lecturers'),
     ])
     sections.value = sRes.data?.data?.sections || sRes.data || []
     subjects.value = subRes.data?.data?.subjects || subRes.data || []

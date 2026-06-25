@@ -72,6 +72,12 @@
             >
               Attach Student
             </button>
+            <button
+              @click="currentTab = 'enrolments'"
+              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
+            >
+              Enrolments
+            </button>
           </nav>
         </div>
       </div>
@@ -88,6 +94,7 @@
       <AssignLecturerList v-if="currentTab === 'assign-lecturer'" />
       <AttachStudentList v-if="currentTab === 'attach-student'" />
       <TimetableList v-if="currentTab === 'timetables'" />
+      <EnrolmentList v-if="currentTab === 'enrolments'" />
     </section>
   </div>
 </template>
@@ -104,6 +111,7 @@ import SectionInfo from './SectionInfo.vue'
 import AssignLecturerList from './AssignLecturerList.vue'
 import AttachStudentList from './AttachStudentList.vue'
 import TimetableList from './TimetableList.vue'
+import EnrolmentList from './EnrolmentList.vue'
 
 const currentTab = ref('section-info')
 const activeSection = ref('info')

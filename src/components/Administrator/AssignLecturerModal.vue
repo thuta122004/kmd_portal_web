@@ -10,7 +10,8 @@
         <div>
           <select
             v-model="form.section_id"
-            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm outline-none focus:border-white/20 transition appearance-none"
+            :disabled="isEdit"
+            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm outline-none focus:border-white/20 transition appearance-none disabled:opacity-50"
           >
             <option value="" disabled class="text-slate-500">Select Section</option>
             <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
@@ -23,7 +24,8 @@
         <div>
           <select
             v-model="form.subject_id"
-            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm outline-none focus:border-white/20 transition appearance-none"
+            :disabled="isEdit"
+            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm outline-none focus:border-white/20 transition appearance-none disabled:opacity-50"
           >
             <option value="" disabled class="text-slate-500">Select Subject</option>
             <option v-for="s in subjects" :key="s.id" :value="s.id">{{ s.name }}</option>
@@ -45,6 +47,7 @@
             {{ errors.lecturer_id[0] }}
           </p>
         </div>
+
         <div>
           <label
             class="flex items-center gap-3 w-full px-4 py-3 bg-slate-950/50 border border-white/5 rounded-lg cursor-pointer hover:border-white/10 transition-colors"
@@ -103,44 +106,66 @@ const form = reactive({
   is_primary: !!props.assignmentToEdit?.is_primary,
 })
 
-onMounted(async () => {
+const fetchDropdownData = async () => {
   try {
     const [sRes, subRes, lRes] = await Promise.all([
-      api.get('/sections'),
-      api.get('/subjects'),
-      api.get('/lecturers'),
+      api.get('/sections?status=active'),
+      api.get('/subjects?status=active'),
+      api.get('/lecturers?status=active'),
     ])
-
-    const fetchedSections = sRes.data?.data?.sections || []
-    const fetchedSubjects = subRes.data?.data?.subjects || []
-    const fetchedLecturers = lRes.data?.data?.lecturers || []
-
-    if (isEdit.value) {
-      if (!form.section_id) {
-        const sec = fetchedSections.find((s) => s.name === props.assignmentToEdit.section_name)
-        if (sec) form.section_id = sec.id
-      }
-      if (!form.subject_id) {
-        const sub = fetchedSubjects.find((s) => s.name === props.assignmentToEdit.subject_name)
-        if (sub) form.subject_id = sub.id
-      }
-      if (!form.lecturer_id) {
-        const lec = fetchedLecturers.find((l) => l.name === props.assignmentToEdit.lecturer_name)
-        if (lec) form.lecturer_id = lec.id
-      }
-    }
-
-    sections.value = fetchedSections.filter(
-      (s) => s.status === 'active' || s.id === form.section_id,
-    )
-    subjects.value = fetchedSubjects.filter(
-      (s) => s.status === 'active' || s.id === form.subject_id,
-    )
-    lecturers.value = fetchedLecturers.filter(
-      (l) => l.status === 'active' || l.id === form.lecturer_id,
-    )
+    sections.value = sRes.data?.data?.sections || sRes.data || []
+    subjects.value = subRes.data?.data?.subjects || subRes.data || []
+    lecturers.value = lRes.data?.data?.lecturers || lRes.data || []
   } catch (error) {
     console.error(error)
+  }
+}
+
+const fetchLecturersOnly = async () => {
+  try {
+    const lRes = await api.get('/lecturers?status=active')
+    const activeLecturers = lRes.data?.data?.lecturers || lRes.data || []
+
+    const currentLecturerExists = activeLecturers.some(
+      (l) => l.id === props.assignmentToEdit.lecturer_id,
+    )
+    if (!currentLecturerExists && props.assignmentToEdit) {
+      activeLecturers.unshift({
+        id: props.assignmentToEdit.lecturer_id,
+        name: props.assignmentToEdit.lecturer_name + ' (Inactive)',
+      })
+    }
+
+    lecturers.value = activeLecturers
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+onMounted(() => {
+  if (!isEdit.value) {
+    fetchDropdownData()
+  } else {
+    sections.value = [
+      {
+        id: props.assignmentToEdit.section_id,
+        name: props.assignmentToEdit.section_name,
+      },
+    ]
+    subjects.value = [
+      {
+        id: props.assignmentToEdit.subject_id,
+        name: props.assignmentToEdit.subject_name,
+      },
+    ]
+    lecturers.value = [
+      {
+        id: props.assignmentToEdit.lecturer_id,
+        name: props.assignmentToEdit.lecturer_name,
+      },
+    ]
+
+    fetchLecturersOnly()
   }
 })
 

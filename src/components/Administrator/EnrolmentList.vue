@@ -1,12 +1,12 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-white">Assigned Lecturers</h2>
+      <h2 class="text-xl font-semibold text-white">Enrolments</h2>
       <button
         @click="openModal(null)"
         class="px-4 py-2 bg-white text-slate-950 text-sm font-semibold rounded-lg hover:bg-slate-200 transition"
       >
-        Assign Lecturer
+        Add Enrolment
       </button>
     </div>
 
@@ -21,7 +21,7 @@
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="Search by subject or lecturer..."
+        placeholder="Search student or section..."
         class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-sm text-white placeholder-slate-600 outline-none focus:border-white/20 transition"
       />
       <select
@@ -31,6 +31,7 @@
         <option value="all">All Status</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
+        <option value="suspended">Suspended</option>
       </select>
     </div>
 
@@ -38,33 +39,39 @@
       <table class="w-full text-left text-sm table-fixed">
         <thead class="bg-white/5 text-slate-400 uppercase text-[10px] tracking-wider">
           <tr>
-            <th class="p-4 font-medium w-1/4">Section</th>
-            <th class="p-4 font-medium w-1/4">Subject</th>
-            <th class="p-4 font-medium w-1/4">Lecturer</th>
-            <th class="p-4 font-medium w-32">Primary</th>
-            <th class="p-4 font-medium w-20">Status</th>
+            <th class="p-4 font-medium w-1/4">Student Name</th>
+            <th class="p-4 font-medium w-1/4">Reg Number</th>
+            <th class="p-4 font-medium w-1/4">Section Name</th>
+            <th class="p-4 font-medium w-1/4">Note</th>
+            <th class="p-4 font-medium w-32">Status</th>
+            <th class="p-4 font-medium w-20">Toggle</th>
             <th class="p-4 font-medium w-20 text-right">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
           <tr v-if="isLoading">
-            <td colspan="6" class="p-10 text-center text-slate-500">
-              Loading assigned lecturers...
-            </td>
+            <td colspan="7" class="p-10 text-center text-slate-500">Loading enrolments...</td>
           </tr>
-          <template v-else-if="paginatedData.length > 0">
-            <tr v-for="item in paginatedData" :key="item.id" class="text-slate-300">
-              <td class="p-4 truncate">{{ item.section_name }}</td>
-              <td class="p-4 truncate">{{ item.subject_name }}</td>
-              <td class="p-4 truncate">{{ item.lecturer_name }}</td>
+          <template v-else-if="paginatedEnrolments.length > 0">
+            <tr v-for="item in paginatedEnrolments" :key="item.id" class="text-slate-300">
+              <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(item)">
+                {{ item.student_name }}
+              </td>
+              <td class="p-4 text-slate-500 truncate">{{ item.student_reg_number }}</td>
+              <td class="p-4 text-slate-300 truncate">{{ item.section_name }}</td>
+              <td class="p-4 text-slate-500 truncate">{{ item.note || '-' }}</td>
               <td class="p-4">
                 <span
+                  class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
                   :class="[
-                    'text-[10px] px-2 py-1 rounded',
-                    item.is_primary ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/5',
+                    item.status === 'active'
+                      ? 'bg-blue-500/20 text-blue-400'
+                      : item.status === 'inactive'
+                        ? 'bg-slate-700/50 text-slate-400'
+                        : 'bg-amber-500/20 text-amber-400',
                   ]"
                 >
-                  {{ item.is_primary ? 'Yes' : 'No' }}
+                  {{ item.status }}
                 </span>
               </td>
               <td class="p-4">
@@ -72,13 +79,21 @@
                   @click="handleToggleStatus(item)"
                   :class="[
                     'w-8 h-4 rounded-full transition-colors relative',
-                    item.status === 'active' ? 'bg-blue-500' : 'bg-slate-700',
+                    item.status === 'active'
+                      ? 'bg-blue-500'
+                      : item.status === 'inactive'
+                        ? 'bg-slate-700'
+                        : 'bg-amber-500',
                   ]"
                 >
                   <span
                     :class="[
                       'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
-                      item.status === 'active' ? 'left-5' : 'left-1',
+                      item.status === 'active'
+                        ? 'left-5'
+                        : item.status === 'inactive'
+                          ? 'left-1'
+                          : 'left-3',
                     ]"
                   ></span>
                 </button>
@@ -91,7 +106,7 @@
             </tr>
           </template>
           <tr v-else>
-            <td colspan="6" class="p-10 text-center text-slate-500 italic">No records found.</td>
+            <td colspan="7" class="p-10 text-center text-slate-500 italic">No records found.</td>
           </tr>
         </tbody>
       </table>
@@ -117,66 +132,42 @@
       </div>
     </div>
 
-    <AssignLecturerModal
+    <EnrolmentModal
       v-if="showModal"
-      :assignmentToEdit="selectedAssignment"
+      :enrolmentToEdit="selectedEnrolment"
       @close="showModal = false"
-      @refresh="fetchData"
+      @refresh="fetchEnrolments"
     />
-
-    <transition
-      enter-active-class="transition ease-out duration-200"
-      enter-from-class="opacity-0 translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition ease-in duration-150"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 translate-y-2"
-    >
-      <div
-        v-if="toast.show"
-        class="fixed bottom-6 right-6 px-6 py-4 rounded-xl border shadow-2xl flex flex-col gap-4 z-50 min-w-[320px]"
-        :class="
-          toast.type === 'success'
-            ? 'bg-slate-900 border-blue-500/50'
-            : 'bg-rose-900 border-rose-500'
-        "
-      >
-        <span class="text-sm font-medium text-white">{{ toast.message }}</span>
-      </div>
-    </transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import api from '@/services/api'
-import AssignLecturerModal from './AssignLecturerModal.vue'
+import EnrolmentModal from './EnrolmentModal.vue'
 
-const data = ref([])
+const enrolments = ref([])
 const isLoading = ref(false)
 const errorMessage = ref(null)
 const showModal = ref(false)
-const selectedAssignment = ref(null)
+const selectedEnrolment = ref(null)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const currentPage = ref(1)
 const itemsPerPage = 7
 
-const toast = ref({ show: false, message: '', type: 'success' })
-
-const filteredData = computed(() => {
-  return data.value.filter(
-    (i) =>
-      (i.lecturer_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        i.subject_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        i.section_name.toLowerCase().includes(searchQuery.value.toLowerCase())) &&
-      (statusFilter.value === 'all' || i.status === statusFilter.value),
+const filteredEnrolments = computed(() => {
+  return enrolments.value.filter(
+    (e) =>
+      (e.student_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        e.section_name.toLowerCase().includes(searchQuery.value.toLowerCase())) &&
+      (statusFilter.value === 'all' || e.status === statusFilter.value),
   )
 })
 
-const lastPage = computed(() => Math.ceil(filteredData.value.length / itemsPerPage) || 1)
-const paginatedData = computed(() =>
-  filteredData.value.slice(
+const lastPage = computed(() => Math.ceil(filteredEnrolments.value.length / itemsPerPage) || 1)
+const paginatedEnrolments = computed(() =>
+  filteredEnrolments.value.slice(
     (currentPage.value - 1) * itemsPerPage,
     currentPage.value * itemsPerPage,
   ),
@@ -184,18 +175,13 @@ const paginatedData = computed(() =>
 
 watch([searchQuery, statusFilter], () => (currentPage.value = 1))
 
-const showToast = (message, type = 'success') => {
-  toast.value = { show: true, message, type }
-  setTimeout(() => (toast.value.show = false), 4000)
-}
-
-const fetchData = async () => {
+const fetchEnrolments = async () => {
   isLoading.value = true
   try {
-    const res = await api.get('/section-assignments')
-    data.value = res.data?.data?.assignments || []
+    const response = await api.get('/enrolments')
+    enrolments.value = response.data?.data?.enrolments || []
   } catch (e) {
-    errorMessage.value = 'Failed to load assignments.'
+    errorMessage.value = 'Failed to load enrolments.'
   } finally {
     isLoading.value = false
   }
@@ -205,21 +191,19 @@ const changePage = (p) => {
   if (p >= 1 && p <= lastPage.value) currentPage.value = p
 }
 
-const handleToggleStatus = async (item) => {
-  try {
-    await api.patch(`/section-assignments/${item.id}/toggle`)
-    item.status = item.status === 'active' ? 'inactive' : 'active'
-    showToast(`Assignment marked as ${item.status}.`, 'success')
-  } catch (e) {
-    const backendMessage = e.response?.data?.message || 'Failed to toggle assignment status.'
-    showToast(backendMessage, 'error')
-  }
-}
-
-const openModal = (item) => {
-  selectedAssignment.value = item
+const openModal = (e) => {
+  selectedEnrolment.value = e
   showModal.value = true
 }
 
-onMounted(fetchData)
+const handleToggleStatus = async (item) => {
+  try {
+    const res = await api.patch(`/enrolments/${item.id}/toggle`)
+    item.status = res.data?.data?.enrolment?.status || item.status
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+onMounted(fetchEnrolments)
 </script>

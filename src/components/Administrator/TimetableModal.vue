@@ -18,11 +18,14 @@
         <div>
           <select
             v-model="form.section_assignments_id"
-            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-300 text-sm outline-none focus:border-white/20 transition appearance-none"
+            :disabled="isEdit"
+            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-300 text-sm outline-none focus:border-white/20 transition appearance-none disabled:opacity-50"
           >
             <option value="" disabled>Select Subject & Section</option>
             <option v-for="a in availableAssignments" :key="a.id" :value="a.id">
-              {{ a.subject_code }} - {{ a.section_code }} ({{ a.lecturer_name }})
+              {{ a.subject_code || a.subject_name }} - {{ a.section_code || a.section_name }} ({{
+                a.lecturer_name
+              }})
             </option>
           </select>
           <p v-if="errors.section_assignments_id" class="text-rose-500 text-[10px] mt-1">
@@ -135,7 +138,10 @@ const formatTimeForInput = (timeString) => {
 }
 
 const form = reactive({
-  section_assignments_id: props.timetableToEdit?.section_assignments_id || '',
+  section_assignments_id:
+    props.timetableToEdit?.section_assignments_id ||
+    props.timetableToEdit?.section_assignment_id ||
+    '',
   day_of_week: props.timetableToEdit?.day_of_week || '',
   start_time: formatTimeForInput(props.timetableToEdit?.start_time) || '',
   end_time: formatTimeForInput(props.timetableToEdit?.end_time) || '',
@@ -143,17 +149,41 @@ const form = reactive({
   link: props.timetableToEdit?.link || '',
 })
 
-const fetchDependencies = async () => {
+const fetchDropdownData = async () => {
   try {
     const response = await api.get('/section-assignments')
-    availableAssignments.value = response.data?.data?.assignments || []
+    const fetchedAssignments = response.data?.data?.assignments || response.data || []
+    availableAssignments.value = fetchedAssignments.filter((a) => a.status !== 'inactive')
   } catch (error) {
     console.error(error)
   }
 }
 
 onMounted(() => {
-  fetchDependencies()
+  if (!isEdit.value) {
+    fetchDropdownData()
+  } else {
+    availableAssignments.value = [
+      {
+        id: form.section_assignments_id,
+        subject_code:
+          props.timetableToEdit.subject_code ||
+          props.timetableToEdit.section_assignment?.subject?.code ||
+          props.timetableToEdit.subject_name ||
+          'Selected Assignment',
+        section_code:
+          props.timetableToEdit.section_code ||
+          props.timetableToEdit.section_assignment?.section?.name ||
+          props.timetableToEdit.section_name ||
+          '',
+        lecturer_name:
+          props.timetableToEdit.lecturer_name ||
+          props.timetableToEdit.section_assignment?.lecturer?.user?.name ||
+          props.timetableToEdit.lecturer_name ||
+          '',
+      },
+    ]
+  }
 })
 
 const handleSubmit = async () => {

@@ -431,10 +431,25 @@ const handleCheckIn = (timetableSlot) => {
 
         if (res.status === 201) {
           const statusResult = res.data?.data?.attendance?.status || 'present'
-          showToast(
-            `Success! Attendance logged dynamically as: [${statusResult.toUpperCase()}].`,
-            'success',
-          )
+
+          const hasLink = timetableSlot.link && timetableSlot.link.trim() !== ''
+
+          if (hasLink) {
+            showToast(
+              `Success! Logged as [${statusResult.toUpperCase()}]. Would you like to join the class now?`,
+              'success',
+              true,
+              () => {
+                window.open(timetableSlot.link, '_blank')
+              },
+            )
+          } else {
+            showToast(
+              `Success! Attendance logged dynamically as: [${statusResult.toUpperCase()}].`,
+              'success',
+            )
+          }
+
           await refreshAttendanceList()
         }
       } catch (err) {

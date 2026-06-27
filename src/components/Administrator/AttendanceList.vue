@@ -127,6 +127,40 @@
         </button>
       </div>
     </div>
+    <transition
+      enter-active-class="transition ease-out duration-200"
+      leave-active-class="transition ease-in duration-150"
+    >
+      <div
+        v-if="toast.show"
+        class="fixed bottom-6 right-6 px-6 py-4 rounded-xl border shadow-2xl flex flex-col gap-4 z-50 min-w-[320px] bg-slate-900 border-amber-500/50"
+      >
+        <span class="text-sm font-medium text-white">{{ toast.message }}</span>
+
+        <input
+          v-if="toast.showRemarkInput"
+          v-model="remarkInput"
+          type="text"
+          placeholder="Enter remark here..."
+          class="px-3 py-2 bg-slate-800 border border-white/10 rounded text-xs text-white outline-none focus:border-white/20"
+        />
+
+        <div v-if="toast.isConfirm" class="flex gap-2 justify-end">
+          <button
+            @click="toast.show = false"
+            class="px-3 py-1 text-xs font-semibold text-slate-400 hover:text-white transition"
+          >
+            Cancel
+          </button>
+          <button
+            @click="handleConfirm"
+            class="px-3 py-1 text-xs font-semibold bg-white text-slate-950 rounded hover:bg-slate-200 transition"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -141,6 +175,16 @@ const searchQuery = ref('')
 const statusFilter = ref('all')
 const currentPage = ref(1)
 const itemsPerPage = 7
+const remarkInput = ref('')
+
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'success',
+  isConfirm: false,
+  onConfirmCallback: null,
+  showRemarkInput: false,
+})
 
 const statusClass = (status) => ({
   'bg-emerald-500/20 text-emerald-400': status === 'present',
@@ -186,8 +230,30 @@ const changePage = (p) => {
 }
 
 const handleToggleStatus = async (item) => {
+  const statusCycle = { present: 'absent', absent: 'late', late: 'excused', excused: 'present' }
+  const nextStatus = statusCycle[item.status] || 'present'
+
+  if (nextStatus === 'excused') {
+    toast.value = {
+      show: true,
+      message: 'Please provide a reason (remark) for marking as EXCUSED',
+      type: 'warning',
+      isConfirm: true,
+      showRemarkInput: true,
+      onConfirmCallback: async () => {
+        await performToggle(item, remarkInput.value)
+        remarkInput.value = ''
+        toast.value.show = false
+      },
+    }
+  } else {
+    await performToggle(item)
+  }
+}
+
+const performToggle = async (item, remark = null) => {
   try {
-    const res = await api.patch(`/attendances/${item.id}/toggle`)
+    const res = await api.patch(`/attendances/${item.id}/toggle`, { remark })
     const updated = res.data?.data?.attendance
     if (updated) {
       item.status = updated.status
@@ -196,6 +262,11 @@ const handleToggleStatus = async (item) => {
   } catch (e) {
     errorMessage.value = 'Failed to update status.'
   }
+}
+
+const handleConfirm = () => {
+  if (toast.value.onConfirmCallback) toast.value.onConfirmCallback()
+  toast.value.show = false
 }
 
 const formatTime = (timeString) => {

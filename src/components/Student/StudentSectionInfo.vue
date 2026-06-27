@@ -48,7 +48,7 @@
         </div>
       </template>
       <div v-else class="col-span-full p-10 text-center text-slate-500 italic">
-        You are not actively registered in any course sections.
+        You are not actively enrolled in any sections.
       </div>
     </div>
 
@@ -117,7 +117,7 @@
               </template>
               <tr v-else>
                 <td colspan="4" class="p-10 text-center text-slate-500 italic">
-                  No logged attendance history found for this section.
+                  No attendance history found for this section.
                 </td>
               </tr>
             </tbody>
@@ -188,11 +188,11 @@
                 >
                   <div class="flex items-center gap-2">
                     <span class="text-slate-500 font-medium">Lecturer:</span>
-                    <span class="truncate text-slate-300">{{ cls.lecturer_name || 'TBA' }}</span>
+                    <span class="truncate text-slate-300">{{ cls.lecturer_name }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <span class="text-slate-500 font-medium">Room:</span>
-                    <span class="text-slate-300">{{ cls.room_number || 'TBA' }}</span>
+                    <span class="text-slate-300">{{ cls.room_number || '-' }}</span>
                   </div>
                 </div>
               </div>
@@ -355,7 +355,7 @@ const initializeStudentDashboard = async () => {
   try {
     const userProfile = JSON.parse(localStorage.getItem('user') || '{}')
     currentUserId.value = userProfile.id
-    currentStudentName.value = userProfile.name || 'Hnin Ain Za Li'
+    currentStudentName.value = userProfile.name
 
     const resSections = await api.get('/sections')
     sections.value = resSections.data?.data?.sections || []
@@ -424,19 +424,19 @@ const handleCheckIn = (timetableSlot) => {
         const payload = {
           user_id: currentUserId.value,
           timetable_id: timetableSlot.id,
-          remark: 'Self check-in registered via Student Profile Dashboard Portal.',
+          remark: 'Self check-in via Student Dashboard.',
         }
 
         const res = await api.post('/attendances', payload)
 
         if (res.status === 201) {
-          const statusResult = res.data?.data?.attendance?.status || 'present'
+          const statusResult = res.data?.data?.attendance?.status
 
           const hasLink = timetableSlot.link && timetableSlot.link.trim() !== ''
 
           if (hasLink) {
             showToast(
-              `Success! Logged as [${statusResult.toUpperCase()}]. Would you like to join the class now?`,
+              `Success! Logged as ${statusResult.toUpperCase()}. Would you like to join the class now?`,
               'success',
               true,
               () => {
@@ -445,7 +445,7 @@ const handleCheckIn = (timetableSlot) => {
             )
           } else {
             showToast(
-              `Success! Attendance logged dynamically as: [${statusResult.toUpperCase()}].`,
+              `Success! Attendance logged dynamically as: ${statusResult.toUpperCase()}.`,
               'success',
             )
           }
@@ -453,7 +453,7 @@ const handleCheckIn = (timetableSlot) => {
           await refreshAttendanceList()
         }
       } catch (err) {
-        const backendMessage = err.response?.data?.message || 'Check-in transaction aborted.'
+        const backendMessage = err.response?.data?.message
         const errorsDetails = err.response?.data?.errors
 
         let finalToastText = backendMessage

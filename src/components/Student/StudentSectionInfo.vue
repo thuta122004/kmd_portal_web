@@ -101,12 +101,35 @@
                     <div class="text-[10px] text-slate-500 mt-0.5">{{ log.day_of_week }}</div>
                   </td>
                   <td class="p-4">
-                    <span
-                      class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
-                      :class="statusClass(log.status)"
-                    >
-                      {{ log.status }}
-                    </span>
+                    <div class="flex flex-col items-start gap-1.5">
+                      <span
+                        class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full inline-block"
+                        :class="statusClass(log.status)"
+                      >
+                        {{ log.status }}
+                      </span>
+
+                      <button
+                        v-if="log.status === 'absent'"
+                        @click="requestExcused(log)"
+                        class="group flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 font-medium transition-all duration-200"
+                      >
+                        <svg
+                          class="w-3 h-3 transition-transform group-hover:-translate-x-0.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                        Request Excuse
+                      </button>
+                    </div>
                   </td>
                   <td class="text-[10px] text-slate-500 italic leading-tight" :title="log.remark">
                     <span class="block line-clamp-2">
@@ -222,6 +245,16 @@
         "
       >
         <span class="text-sm font-medium text-white">{{ toast.message }}</span>
+
+        <div v-if="toast.showRemarkInput" class="w-full">
+          <input
+            v-model="remarkInput"
+            type="text"
+            placeholder="Enter your excuse reason..."
+            class="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded text-xs text-white placeholder-slate-600 outline-none focus:border-blue-500/50 transition"
+          />
+        </div>
+
         <div v-if="toast.isConfirm" class="flex gap-2 justify-end">
           <button
             @click="toast.show = false"
@@ -252,6 +285,7 @@ const isLoading = ref(false)
 const checkInSubmitting = ref(false)
 const activeTab = ref('attendance')
 const searchQuery = ref('')
+const remarkInput = ref('')
 
 const currentUserId = ref(null)
 const currentStudentName = ref('')
@@ -265,15 +299,25 @@ const toast = ref({
   message: '',
   type: 'success',
   isConfirm: false,
+  showRemarkInput: false,
   onConfirmCallback: null,
 })
 
-const showToast = (message, type = 'success', isConfirm = false, callback = null) => {
-  toast.value.message = message
-  toast.value.type = type
-  toast.value.isConfirm = isConfirm
-  toast.value.onConfirmCallback = callback
-  toast.value.show = true
+const showToast = (
+  message,
+  type = 'success',
+  isConfirm = false,
+  callback = null,
+  showInput = false,
+) => {
+  toast.value = {
+    show: true,
+    message,
+    type,
+    isConfirm,
+    showRemarkInput: showInput,
+    onConfirmCallback: callback,
+  }
 
   if (!isConfirm) {
     setTimeout(() => {
@@ -287,6 +331,32 @@ const handleConfirm = () => {
     toast.value.onConfirmCallback()
   }
   toast.value.show = false
+}
+
+const requestExcused = (log) => {
+  remarkInput.value = ''
+
+  toast.value = {
+    show: true,
+    message: 'Provide a reason for being excused:',
+    type: 'warning',
+    isConfirm: true,
+    showRemarkInput: true,
+    onConfirmCallback: async () => {
+      try {
+        const res = await api.put(`/attendances/${log.id}`, {
+          status: 'excused',
+          remark: remarkInput.value,
+        })
+        if (res.data.status === 'success') {
+          showToast('Request submitted successfully!', 'success')
+          await refreshAttendanceList()
+        }
+      } catch (err) {
+        showToast('Failed to update status.', 'error')
+      }
+    },
+  }
 }
 
 const formatDate = (dateStr) => {

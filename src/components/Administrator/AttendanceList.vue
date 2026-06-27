@@ -230,7 +230,12 @@ const changePage = (p) => {
 }
 
 const handleToggleStatus = async (item) => {
-  const statusCycle = { present: 'absent', absent: 'late', late: 'excused', excused: 'present' }
+  const statusCycle = {
+    absent: 'present',
+    present: 'late',
+    late: 'excused',
+    excused: 'absent',
+  }
   const nextStatus = statusCycle[item.status] || 'present'
 
   if (nextStatus === 'excused') {

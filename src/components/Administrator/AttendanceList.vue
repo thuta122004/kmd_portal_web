@@ -174,7 +174,7 @@ const errorMessage = ref(null)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const currentPage = ref(1)
-const itemsPerPage = 7
+const itemsPerPage = 5
 const remarkInput = ref('')
 
 const toast = ref({

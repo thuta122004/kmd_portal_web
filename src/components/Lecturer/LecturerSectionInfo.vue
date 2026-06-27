@@ -2,7 +2,7 @@
   <div class="space-y-6 relative">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold text-white">
-        {{ selectedSection ? selectedSection.name : 'My Enrolled Sections' }}
+        {{ selectedSection ? selectedSection.name : 'My Assigned Sections' }}
       </h2>
       <button
         v-if="selectedSection"
@@ -17,7 +17,7 @@
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="Search my enrolled sections..."
+        placeholder="Search my assigned sections..."
         class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-sm text-white placeholder-slate-600 outline-none focus:border-white/20 transition"
       />
     </div>
@@ -48,7 +48,7 @@
         </div>
       </template>
       <div v-else class="col-span-full p-10 text-center text-slate-500 italic">
-        You are not actively enrolled in any sections.
+        You are not assigned to any active sections.
       </div>
     </div>
 
@@ -94,7 +94,6 @@
                 <tr v-for="log in sectionAttendanceLogs" :key="log.id" class="text-slate-300">
                   <td class="p-4 font-medium text-white truncate">
                     <div>{{ log.subject_code }}</div>
-                    <div class="text-[10px] text-slate-500">{{ log.lecturer_name }}</div>
                   </td>
                   <td class="p-4 text-xs text-slate-400">
                     <div>{{ log.date }}</div>
@@ -110,7 +109,7 @@
                       </span>
 
                       <button
-                        v-if="log.status === 'absent'"
+                        v-if="log.status !== 'present' && log.status !== 'excused'"
                         @click="requestExcused(log)"
                         class="group flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 font-medium transition-all duration-200"
                       >
@@ -140,7 +139,7 @@
               </template>
               <tr v-else>
                 <td colspan="4" class="p-10 text-center text-slate-500 italic">
-                  No attendance history found for this section.
+                  No attendance history found for students in this section.
                 </td>
               </tr>
             </tbody>
@@ -203,7 +202,7 @@
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                     />
                   </svg>
-                  {{ checkInSubmitting ? 'Logging...' : 'Mark My Attendance' }}
+                  {{ checkInSubmitting ? 'Logging...' : 'Log Lecturer Attendance' }}
                 </button>
 
                 <div
@@ -250,7 +249,7 @@
           <input
             v-model="remarkInput"
             type="text"
-            placeholder="Enter your excuse reason..."
+            placeholder="Enter reason..."
             class="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded text-xs text-white placeholder-slate-600 outline-none focus:border-blue-500/50 transition"
           />
         </div>
@@ -275,11 +274,11 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import api from '@/services/api'
 
 const sections = ref([])
-const activeEnrolments = ref([])
+const activeAssignments = ref([])
 const selectedSection = ref(null)
 const isLoading = ref(false)
 const checkInSubmitting = ref(false)
@@ -288,9 +287,9 @@ const searchQuery = ref('')
 const remarkInput = ref('')
 
 const currentUserId = ref(null)
-const currentStudentName = ref('')
+const currentUserName = ref('')
 
-const personalAttendances = ref([])
+const allAttendances = ref([])
 const timetables = ref([])
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -333,37 +332,9 @@ const handleConfirm = () => {
   toast.value.show = false
 }
 
-const requestExcused = (log) => {
-  remarkInput.value = ''
-
-  toast.value = {
-    show: true,
-    message: 'Provide a reason for being excused',
-    type: 'warning',
-    isConfirm: true,
-    showRemarkInput: true,
-    onConfirmCallback: async () => {
-      try {
-        const res = await api.put(`/attendances/${log.id}`, {
-          status: 'excused',
-          remark: remarkInput.value,
-        })
-        if (res.data.status === 'success') {
-          showToast('Request submitted successfully!', 'success')
-          await refreshAttendanceList()
-        }
-      } catch (err) {
-        showToast('Failed to update status.', 'error')
-      }
-    },
-  }
-}
-
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A'
-
   const date = new Date(dateStr)
-
   return date.toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
@@ -380,23 +351,26 @@ const statusClass = (status) => ({
 
 const filteredSections = computed(() => {
   return sections.value.filter((s) => {
-    const isEnrolled = activeEnrolments.value.some(
-      (e) => e.section_name === s.name || e.section_id === s.id,
+    const isAssigned = activeAssignments.value.some(
+      (a) => a.section_name === s.name || a.section_id === s.id,
     )
 
     const matchesSearch =
       s.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       s.code.toLowerCase().includes(searchQuery.value.toLowerCase())
 
-    return isEnrolled && matchesSearch
+    return isAssigned && matchesSearch
   })
 })
 
 const sectionAttendanceLogs = computed(() => {
   if (!selectedSection.value) return []
-  return personalAttendances.value.filter(
-    (log) => log.section_code === selectedSection.value.code && log.user_id === currentUserId.value,
-  )
+
+  return allAttendances.value.filter((log) => {
+    const isCorrectSection = log.section_code === selectedSection.value.code
+    const isMyRecord = Number(log.user_id) === Number(currentUserId.value)
+    return isCorrectSection && isMyRecord
+  })
 })
 
 const groupedTimetable = computed(() => {
@@ -420,44 +394,40 @@ const groupedTimetable = computed(() => {
   return grouped
 })
 
-const initializeStudentDashboard = async () => {
+const initializeLecturerDashboard = async () => {
   isLoading.value = true
   try {
     const userProfile = JSON.parse(localStorage.getItem('user') || '{}')
     currentUserId.value = userProfile.id
-    currentStudentName.value = userProfile.name
+    currentUserName.value = userProfile.name
 
     const resSections = await api.get('/sections')
     sections.value = resSections.data?.data?.sections || []
 
-    const resEnrolments = await api.get('/enrolments', {
-      params: { user_id: currentUserId.value },
-    })
-    const rawEnrolments = resEnrolments.data?.data?.enrolments || []
+    const resAssignments = await api.get('/section-assignments')
+    const rawAssignments = resAssignments.data?.data?.assignments || []
 
-    activeEnrolments.value = rawEnrolments.filter(
-      (e) =>
-        e.status === 'active' &&
-        e.student_name.toLowerCase() === currentStudentName.value.toLowerCase(),
+    activeAssignments.value = rawAssignments.filter(
+      (a) =>
+        a.status === 'active' &&
+        (a.lecturer_name?.toLowerCase() === currentUserName.value.toLowerCase() ||
+          a.lecturer_id === currentUserId.value),
     )
 
     await refreshAttendanceList()
   } catch (err) {
-    showToast('Failed to initialize profile catalog assets.', 'error')
+    showToast('Failed to initialize lecturer dashboard data.', 'error')
   } finally {
     isLoading.value = false
   }
 }
 
 const refreshAttendanceList = async () => {
-  if (!currentUserId.value) return
   try {
-    const resAttendance = await api.get('/attendances', {
-      params: { user_id: currentUserId.value },
-    })
-    personalAttendances.value = resAttendance.data?.data?.attendances || []
+    const resAttendance = await api.get('/attendances')
+    allAttendances.value = resAttendance.data?.data?.attendances || []
   } catch (err) {
-    showToast('Failed to sync updated attendance records.', 'warning')
+    showToast('Failed to sync attendance records.', 'warning')
   }
 }
 
@@ -472,7 +442,9 @@ const fetchSectionData = async (section) => {
     const allTimetables = resTimetables.data?.data?.timetables || []
 
     timetables.value = allTimetables.filter(
-      (t) => t.section_id === section.id || t.section_name === section.name,
+      (t) =>
+        (t.section_id === section.id || t.section_name === section.name) &&
+        t.lecturer_id === currentUserId.value,
     )
 
     selectedSection.value = section
@@ -485,7 +457,7 @@ const fetchSectionData = async (section) => {
 
 const handleCheckIn = (timetableSlot) => {
   showToast(
-    `Are you sure you want to log check-in attendance for ${timetableSlot.subject_name}?`,
+    `Are you sure you want to log check-in for ${timetableSlot.subject_name}?`,
     'warning',
     true,
     async () => {
@@ -494,50 +466,53 @@ const handleCheckIn = (timetableSlot) => {
         const payload = {
           user_id: currentUserId.value,
           timetable_id: timetableSlot.id,
-          remark: 'Self check-in via Student Dashboard.',
+          remark: 'Class check-in via Lecturer Dashboard.',
         }
 
-        const res = await api.post('/attendances', payload)
-
-        if (res.status === 201) {
-          const statusResult = res.data?.data?.attendance?.status
-
-          const hasLink = timetableSlot.link && timetableSlot.link.trim() !== ''
-
-          if (hasLink) {
-            showToast(
-              `Success! Logged as ${statusResult.toUpperCase()}. Would you like to join the class now?`,
-              'success',
-              true,
-              () => {
-                window.open(timetableSlot.link, '_blank')
-              },
-            )
-          } else {
-            showToast(
-              `Success! Attendance logged dynamically as: ${statusResult.toUpperCase()}.`,
-              'success',
-            )
-          }
-
-          await refreshAttendanceList()
-        }
+        await api.post('/attendances', payload)
+        showToast('Success! Lecturer attendance logged.', 'success')
+        await refreshAttendanceList()
       } catch (err) {
-        const backendMessage = err.response?.data?.message
-        const errorsDetails = err.response?.data?.errors
+        const errorData = err.response?.data?.errors
+        let errorMessage = 'Check-in failed.'
 
-        let finalToastText = backendMessage
-        if (errorsDetails) {
-          const firstKey = Object.keys(errorsDetails)[0]
-          if (errorsDetails[firstKey] && errorsDetails[firstKey].length > 0) {
-            finalToastText = errorsDetails[firstKey][0]
-          }
+        if (errorData) {
+          errorMessage = Object.values(errorData).flat().join(' ')
+        } else if (err.response?.data?.message) {
+          errorMessage = err.response.data.message
         }
-        showToast(finalToastText, 'error')
+
+        showToast(errorMessage, 'error')
       } finally {
         checkInSubmitting.value = false
       }
     },
+  )
+}
+
+const requestExcused = (log) => {
+  remarkInput.value = ''
+
+  showToast(
+    `Provide a reason for being excused for ${log.date}`,
+    'warning',
+    true,
+    async () => {
+      try {
+        const res = await api.put(`/attendances/${log.id}`, {
+          status: 'excused',
+          remark: remarkInput.value,
+        })
+
+        if (res.status === 200 || res.data.status === 'success') {
+          showToast('Request submitted successfully!', 'success')
+          await refreshAttendanceList()
+        }
+      } catch (err) {
+        showToast('Failed to update status. Please try again.', 'error')
+      }
+    },
+    true,
   )
 }
 
@@ -558,5 +533,5 @@ const formatTime = (timeStr) => {
   return `${h}:${minute} ${ampm}`
 }
 
-onMounted(initializeStudentDashboard)
+onMounted(initializeLecturerDashboard)
 </script>

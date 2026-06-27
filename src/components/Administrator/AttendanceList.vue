@@ -2,6 +2,15 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold text-white">Attendance Records</h2>
+
+      <button
+        @click="triggerGlobalRefresh"
+        :disabled="isRefreshing"
+        class="px-4 py-2 bg-white text-slate-950 text-sm font-semibold rounded-lg hover:bg-slate-200 transition"
+      >
+        <span v-if="isRefreshing">Refreshing...</span>
+        <span v-else>Refresh All</span>
+      </button>
     </div>
 
     <div
@@ -176,6 +185,7 @@ const statusFilter = ref('all')
 const currentPage = ref(1)
 const itemsPerPage = 5
 const remarkInput = ref('')
+const isRefreshing = ref(false)
 
 const toast = ref({
   show: false,
@@ -192,6 +202,21 @@ const statusClass = (status) => ({
   'bg-amber-500/20 text-amber-400': status === 'late',
   'bg-blue-500/20 text-blue-400': status === 'excused',
 })
+
+const triggerGlobalRefresh = async () => {
+  isRefreshing.value = true
+  errorMessage.value = null
+
+  try {
+    await api.post('/attendances/refresh')
+
+    await fetchAttendances()
+  } catch (e) {
+    errorMessage.value = 'Failed to auto-fill attendances. Please check server logs.'
+  } finally {
+    isRefreshing.value = false
+  }
+}
 
 const filteredAttendances = computed(() => {
   return attendances.value.filter(

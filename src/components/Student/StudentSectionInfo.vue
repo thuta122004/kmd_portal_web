@@ -86,12 +86,12 @@
                 <th class="p-4 font-medium w-1/4">Subject Code</th>
                 <th class="p-4 font-medium w-1/4">Date & Schedule</th>
                 <th class="p-4 font-medium w-1/4">Status</th>
-                <th class="p-4 font-medium w-1/6">Remark</th>
+                <th class="p-4 font-medium w-1/4">Remark</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
-              <template v-if="sectionAttendanceLogs.length > 0">
-                <tr v-for="log in sectionAttendanceLogs" :key="log.id" class="text-slate-300">
+              <template v-if="paginatedAttendanceLogs.length > 0">
+                <tr v-for="log in paginatedAttendanceLogs" :key="log.id" class="text-slate-300">
                   <td class="p-4 font-medium text-white truncate">
                     <div>{{ log.subject_code }}</div>
                     <div class="text-[10px] text-slate-500">{{ log.lecturer_name }}</div>
@@ -145,6 +145,28 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div
+          v-if="totalPages > 1"
+          class="flex justify-between items-center text-xs text-slate-500 px-2 mt-4"
+        >
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <div class="flex gap-2">
+            <button
+              @click="currentPage--"
+              :disabled="currentPage === 1"
+              class="hover:text-white transition disabled:opacity-30"
+            >
+              Prev
+            </button>
+            <button
+              @click="currentPage++"
+              :disabled="currentPage === totalPages"
+              class="hover:text-white transition disabled:opacity-30"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -286,6 +308,8 @@ const checkInSubmitting = ref(false)
 const activeTab = ref('attendance')
 const searchQuery = ref('')
 const remarkInput = ref('')
+const currentPage = ref(1)
+const itemsPerPage = 5
 
 const currentUserId = ref(null)
 const currentStudentName = ref('')
@@ -464,6 +488,7 @@ const refreshAttendanceList = async () => {
 const fetchSectionData = async (section) => {
   isLoading.value = true
   activeTab.value = 'attendance'
+  currentPage.value = 1
 
   try {
     await refreshAttendanceList()
@@ -472,7 +497,8 @@ const fetchSectionData = async (section) => {
     const allTimetables = resTimetables.data?.data?.timetables || []
 
     timetables.value = allTimetables.filter(
-      (t) => t.section_id === section.id || t.section_name === section.name,
+      (t) =>
+        (t.section_id === section.id || t.section_name === section.name) && t.status === 'active',
     )
 
     selectedSection.value = section
@@ -482,6 +508,13 @@ const fetchSectionData = async (section) => {
     isLoading.value = false
   }
 }
+
+const totalPages = computed(() => Math.ceil(sectionAttendanceLogs.value.length / itemsPerPage) || 1)
+
+const paginatedAttendanceLogs = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  return sectionAttendanceLogs.value.slice(start, start + itemsPerPage)
+})
 
 const handleCheckIn = (timetableSlot) => {
   showToast(

@@ -97,12 +97,12 @@
                 <th class="p-4 font-medium w-1/4">Subject Code</th>
                 <th class="p-4 font-medium w-1/4">Date & Schedule</th>
                 <th class="p-4 font-medium w-1/4">Status</th>
-                <th class="p-4 font-medium w-1/6">Remark</th>
+                <th class="p-4 font-medium w-1/4">Remark</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
-              <template v-if="sectionAttendanceLogs.length > 0">
-                <tr v-for="log in sectionAttendanceLogs" :key="log.id" class="text-slate-300">
+              <template v-if="paginatedMyAttendanceLogs.length > 0">
+                <tr v-for="log in paginatedMyAttendanceLogs" :key="log.id" class="text-slate-300">
                   <td class="p-4 font-medium text-white truncate">
                     <div>{{ log.subject_code }}</div>
                   </td>
@@ -149,12 +149,35 @@
                 </tr>
               </template>
               <tr v-else>
-                <td colspan="5" class="p-10 text-center text-slate-500 italic">
-                  No attendance history found for students in this section.
+                <td colspan="4" class="p-10 text-center text-slate-500 italic">
+                  No attendance history found.
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div
+          v-if="myAttendanceLastPage > 1"
+          class="flex justify-between items-center text-xs text-slate-500 px-2 mt-4"
+        >
+          <span>Page {{ myAttendanceCurrentPage }} of {{ myAttendanceLastPage }}</span>
+          <div class="flex gap-2">
+            <button
+              @click="myAttendanceCurrentPage--"
+              :disabled="myAttendanceCurrentPage === 1"
+              class="hover:text-white transition disabled:opacity-30"
+            >
+              Prev
+            </button>
+            <button
+              @click="myAttendanceCurrentPage++"
+              :disabled="myAttendanceCurrentPage === myAttendanceLastPage"
+              class="hover:text-white transition disabled:opacity-30"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -403,6 +426,7 @@ const studentSearchQuery = ref('')
 const studentStatusFilter = ref('all')
 const studentCurrentPage = ref(1)
 const itemsPerPage = 5
+const myAttendanceCurrentPage = ref(1)
 
 const currentUserId = ref(null)
 const currentUserName = ref('')
@@ -552,6 +576,7 @@ const refreshAttendanceList = async () => {
 const fetchSectionData = async (section) => {
   isLoading.value = true
   activeTab.value = 'attendance'
+  myAttendanceCurrentPage.value = 1
 
   try {
     await refreshAttendanceList()
@@ -716,6 +741,15 @@ const performToggle = async (item, remark = null) => {
     showToast('Failed to update status', 'error')
   }
 }
+
+const myAttendanceLastPage = computed(
+  () => Math.ceil(sectionAttendanceLogs.value.length / itemsPerPage) || 1,
+)
+
+const paginatedMyAttendanceLogs = computed(() => {
+  const start = (myAttendanceCurrentPage.value - 1) * itemsPerPage
+  return sectionAttendanceLogs.value.slice(start, start + itemsPerPage)
+})
 
 onMounted(initializeLecturerDashboard)
 </script>

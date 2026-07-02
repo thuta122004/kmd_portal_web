@@ -3,14 +3,23 @@
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold text-white">Attendance Records</h2>
 
-      <button
-        @click="triggerGlobalRefresh"
-        :disabled="isRefreshing"
-        class="px-4 py-2 bg-white text-slate-950 text-sm font-semibold rounded-lg hover:bg-slate-200 transition"
-      >
-        <span v-if="isRefreshing">Refreshing...</span>
-        <span v-else>Refresh All</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <input
+          v-model="refreshStartDate"
+          type="date"
+          class="bg-slate-950 text-slate-300 text-xs px-3 py-2 rounded-lg border border-white/10 focus:border-white/20 outline-none"
+          title="Select date to backfill from (optional)"
+        />
+
+        <button
+          @click="triggerGlobalRefresh"
+          :disabled="isRefreshing"
+          class="px-4 py-2 bg-white text-slate-950 text-sm font-semibold rounded-lg hover:bg-slate-200 transition disabled:opacity-50"
+        >
+          <span v-if="isRefreshing">Refreshing...</span>
+          <span v-else>Refresh All</span>
+        </button>
+      </div>
     </div>
 
     <div
@@ -186,6 +195,7 @@ const currentPage = ref(1)
 const itemsPerPage = 5
 const remarkInput = ref('')
 const isRefreshing = ref(false)
+const refreshStartDate = ref('')
 
 const toast = ref({
   show: false,
@@ -208,11 +218,14 @@ const triggerGlobalRefresh = async () => {
   errorMessage.value = null
 
   try {
-    await api.post('/attendances/refresh')
+    await api.post('/attendances/refresh', {
+      start_date: refreshStartDate.value,
+    })
 
     await fetchAttendances()
+    refreshStartDate.value = ''
   } catch (e) {
-    errorMessage.value = 'Failed to auto-fill attendances. Please check server logs.'
+    errorMessage.value = e.response?.data?.message || 'Failed to auto-fill attendances.'
   } finally {
     isRefreshing.value = false
   }

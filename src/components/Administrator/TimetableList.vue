@@ -183,7 +183,7 @@ const selectedTimetable = ref(null)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const currentPage = ref(1)
-const itemsPerPage = 7
+const itemsPerPage = 6
 
 const toast = ref({ show: false, message: '', type: 'success', isConfirm: false, onConfirm: null })
 

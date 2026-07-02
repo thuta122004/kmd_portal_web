@@ -76,6 +76,17 @@
         >
           Class Timetable
         </button>
+        <button
+          @click="activeTab = 'student-attendance'"
+          :class="[
+            'px-5 py-3 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'student-attendance'
+              ? 'border-blue-500 text-blue-400'
+              : 'border-transparent text-slate-400 hover:text-white',
+          ]"
+        >
+          Student Attendance
+        </button>
       </div>
 
       <div v-if="activeTab === 'attendance'" class="space-y-4">
@@ -138,7 +149,7 @@
                 </tr>
               </template>
               <tr v-else>
-                <td colspan="4" class="p-10 text-center text-slate-500 italic">
+                <td colspan="5" class="p-10 text-center text-slate-500 italic">
                   No attendance history found for students in this section.
                 </td>
               </tr>
@@ -222,6 +233,108 @@
           </div>
         </div>
       </div>
+
+      <div v-if="activeTab === 'student-attendance'" class="space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input
+            v-model="studentSearchQuery"
+            type="text"
+            placeholder="Search students..."
+            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-sm text-white placeholder-slate-600 outline-none focus:border-white/20"
+          />
+          <select
+            v-model="studentStatusFilter"
+            class="px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none"
+          >
+            <option value="all">All Status</option>
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+            <option value="late">Late</option>
+            <option value="excused">Excused</option>
+          </select>
+        </div>
+
+        <div class="border border-white/5 rounded-xl overflow-hidden min-h-[100px]">
+          <table class="w-full text-left text-sm table-fixed">
+            <thead class="bg-white/5 text-slate-400 uppercase text-[10px] tracking-wider">
+              <tr>
+                <th class="p-4 font-medium w-1/3">Student</th>
+                <th class="p-4 font-medium w-1/4">Date</th>
+                <th class="p-4 font-medium w-1/4">Status</th>
+                <th class="p-4 font-medium w-1/4">Remark</th>
+                <th class="p-4 font-medium w-20">Toggle</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <tr v-for="item in paginatedStudentAttendances" :key="item.id" class="text-slate-300">
+                <td class="p-4 truncate font-medium">{{ item.user_name }}</td>
+                <td class="p-4 text-xs text-slate-500">{{ item.date }}</td>
+                <td class="p-4">
+                  <span
+                    class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full inline-block"
+                    :class="statusClass(item.status)"
+                  >
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td class="text-[10px] text-slate-500 italic leading-tight" :title="item.remark">
+                  <span class="block line-clamp-2">
+                    {{ item.remark || 'No extra feedback provided.' }}
+                  </span>
+                </td>
+                <td class="p-4">
+                  <button
+                    @click="handleToggleStatus(item)"
+                    :class="[
+                      'w-8 h-4 rounded-full transition-colors relative',
+                      item.status === 'present'
+                        ? 'bg-emerald-500'
+                        : item.status === 'absent'
+                          ? 'bg-rose-500'
+                          : item.status === 'late'
+                            ? 'bg-amber-500'
+                            : 'bg-blue-500',
+                    ]"
+                  >
+                    <span
+                      class="absolute top-1 left-1 w-2 h-2 rounded-full bg-white transition-all"
+                    ></span>
+                  </button>
+                </td>
+              </tr>
+
+              <tr v-if="paginatedStudentAttendances.length === 0">
+                <td colspan="5" class="p-10 text-center text-slate-500 italic">
+                  No students found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div
+          v-if="studentLastPage > 1"
+          class="flex justify-between items-center text-xs text-slate-500 px-2 mt-4"
+        >
+          <span>Page {{ studentCurrentPage }} of {{ studentLastPage }}</span>
+          <div class="flex gap-2">
+            <button
+              @click="changePage(studentCurrentPage - 1)"
+              :disabled="studentCurrentPage === 1"
+              class="hover:text-white transition disabled:opacity-30"
+            >
+              Prev
+            </button>
+            <button
+              @click="changePage(studentCurrentPage + 1)"
+              :disabled="studentCurrentPage === studentLastPage"
+              class="hover:text-white transition disabled:opacity-30"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <transition
@@ -274,7 +387,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import api from '@/services/api'
 
 const sections = ref([])
@@ -285,6 +398,11 @@ const checkInSubmitting = ref(false)
 const activeTab = ref('attendance')
 const searchQuery = ref('')
 const remarkInput = ref('')
+const studentAttendances = ref([])
+const studentSearchQuery = ref('')
+const studentStatusFilter = ref('all')
+const studentCurrentPage = ref(1)
+const itemsPerPage = 5
 
 const currentUserId = ref(null)
 const currentUserName = ref('')
@@ -438,19 +556,22 @@ const fetchSectionData = async (section) => {
   try {
     await refreshAttendanceList()
 
+    const res = await api.get(`/attendances?section_id=${section.id}`)
+    studentAttendances.value = res.data?.data?.attendances || []
+
     const resTimetables = await api.get('/timetables')
     const allTimetables = resTimetables.data?.data?.timetables || []
 
     timetables.value = allTimetables.filter(
       (t) =>
-        (t.section_id === section.id || t.section_name === section.name) &&
+        t.section_id === section.id &&
         t.lecturer_id === currentUserId.value &&
         t.status === 'active',
     )
 
     selectedSection.value = section
   } catch (err) {
-    showToast('Failed to retrieve structured class data maps.', 'error')
+    showToast('Failed to load dashboard data.', 'error')
   } finally {
     isLoading.value = false
   }
@@ -532,6 +653,68 @@ const formatTime = (timeStr) => {
   const ampm = h >= 12 ? 'PM' : 'AM'
   h = h % 12 || 12
   return `${h}:${minute} ${ampm}`
+}
+
+const filteredStudentAttendances = computed(() => {
+  const validTimetableIds = timetables.value.map((t) => t.id)
+
+  return studentAttendances.value.filter(
+    (a) =>
+      validTimetableIds.includes(a.timetable_id) &&
+      Number(a.user_id) !== Number(currentUserId.value) &&
+      a.user_name.toLowerCase().includes(studentSearchQuery.value.toLowerCase()) &&
+      (studentStatusFilter.value === 'all' || a.status === studentStatusFilter.value),
+  )
+})
+
+const studentLastPage = computed(
+  () => Math.ceil(filteredStudentAttendances.value.length / itemsPerPage) || 1,
+)
+
+const paginatedStudentAttendances = computed(() => {
+  const start = (studentCurrentPage.value - 1) * itemsPerPage
+  return filteredStudentAttendances.value.slice(start, start + itemsPerPage)
+})
+
+const changePage = (p) => {
+  if (p >= 1 && p <= studentLastPage.value) studentCurrentPage.value = p
+}
+
+watch([studentSearchQuery, studentStatusFilter], () => {
+  studentCurrentPage.value = 1
+})
+
+const handleToggleStatus = async (item) => {
+  const statusCycle = { absent: 'present', present: 'late', late: 'excused', excused: 'absent' }
+  const nextStatus = statusCycle[item.status] || 'present'
+
+  if (nextStatus === 'excused') {
+    showToast(
+      'Add a remark for EXCUSED status',
+      'warning',
+      true,
+      async () => {
+        await performToggle(item, remarkInput.value)
+        remarkInput.value = ''
+      },
+      true,
+    )
+  } else {
+    await performToggle(item)
+  }
+}
+
+const performToggle = async (item, remark = null) => {
+  try {
+    const res = await api.patch(`/attendances/${item.id}/toggle`, { remark })
+    const updated = res.data?.data?.attendance
+    if (updated) {
+      item.status = updated.status
+      item.remark = updated.remark
+    }
+  } catch (e) {
+    showToast('Failed to update status', 'error')
+  }
 }
 
 onMounted(initializeLecturerDashboard)

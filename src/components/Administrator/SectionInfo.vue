@@ -106,7 +106,7 @@
           <div class="flex items-center justify-between border-b border-white/5 pb-4">
             <div>
               <h3 class="text-lg font-medium text-white">
-                {{ selectedStudent.name || selectedStudent.student_name }}
+                {{ selectedStudent.name }}
               </h3>
               <p class="text-xs text-slate-500 mt-1 font-mono">
                 {{ selectedStudent.student_reg_number }}
@@ -159,17 +159,16 @@
                   class="bg-slate-950/50 p-2.5 rounded border border-white/5"
                 >
                   <div class="flex justify-between items-start">
-                    <p class="text-sm text-white font-medium">{{ guardian.name || 'Unknown' }}</p>
+                    <p class="text-sm text-white font-medium">
+                      {{ guardian.name }} ({{ guardian.relationship_type }})
+                    </p>
                     <span
                       v-if="guardian.is_primary_contact"
                       class="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-[9px] font-bold uppercase"
                       >Primary</span
                     >
                   </div>
-                  <p class="text-xs text-slate-500 mt-1">
-                    {{ guardian.relationship_type || guardian.relationship }}
-                  </p>
-                  <p class="text-xs text-slate-400 mt-0.5">{{ guardian.phone }}</p>
+                  <p class="text-xs text-slate-400 mt-1">{{ guardian.phone }}</p>
                 </div>
               </div>
               <div v-else class="text-xs text-slate-500 italic py-2">
@@ -204,7 +203,7 @@
                       class="hover:bg-slate-800/20"
                     >
                       <td class="px-3 py-2 font-medium text-white">
-                        {{ enrolment.section || enrolment.section_name }}
+                        {{ enrolment.section }}
                       </td>
                       <td class="px-3 py-2 text-slate-400">{{ enrolment.enrolled_at }}</td>
                       <td class="px-3 py-2">
@@ -370,7 +369,7 @@
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                       />
                     </svg>
-                    <span class="truncate">{{ cls.lecturer_name || 'TBA' }}</span>
+                    <span class="truncate">{{ cls.lecturer_name }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <svg
@@ -386,7 +385,7 @@
                         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                       />
                     </svg>
-                    <span>{{ cls.room_number || 'TBA' }}</span>
+                    <span>{{ cls.room_number || '-' }}</span>
                   </div>
                 </div>
               </div>

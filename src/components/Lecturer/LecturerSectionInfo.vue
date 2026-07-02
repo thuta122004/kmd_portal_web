@@ -444,7 +444,8 @@ const fetchSectionData = async (section) => {
     timetables.value = allTimetables.filter(
       (t) =>
         (t.section_id === section.id || t.section_name === section.name) &&
-        t.lecturer_id === currentUserId.value,
+        t.lecturer_id === currentUserId.value &&
+        t.status === 'active',
     )
 
     selectedSection.value = section

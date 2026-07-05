@@ -14,7 +14,7 @@
             class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-white text-sm outline-none focus:border-white/20 transition appearance-none disabled:opacity-50"
           >
             <option value="" disabled class="text-slate-500">Select Section</option>
-            <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.code }}</option>
+            <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
           <p v-if="errors.section_id" class="text-rose-500 text-[10px] mt-1">
             {{ errors.section_id[0] }}

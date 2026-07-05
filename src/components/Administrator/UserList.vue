@@ -48,63 +48,71 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
-          <tr v-for="user in paginatedUsers" :key="user.id" class="text-slate-300">
-            <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(user)">
-              {{ user.name }}
-            </td>
-            <td class="p-4 text-slate-500 truncate">{{ user.email }}</td>
-            <td class="p-4">
-              <span class="text-xs bg-white/5 px-2 py-1 rounded">{{ user.role_name }}</span>
-            </td>
-            <td class="p-4">
-              <span
-                class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
-                :class="[
-                  user.status === 'active'
-                    ? 'bg-blue-500/20 text-blue-400'
-                    : user.status === 'inactive'
-                      ? 'bg-slate-700/50 text-slate-400'
-                      : 'bg-amber-500/20 text-amber-400',
-                ]"
-              >
-                {{ user.status }}
-              </span>
-            </td>
-            <td class="p-4">
-              <button
-                @click="handleToggleStatus(user)"
-                :class="[
-                  'w-8 h-4 rounded-full transition-colors relative',
-                  user.status === 'active'
-                    ? 'bg-blue-500'
-                    : user.status === 'inactive'
-                      ? 'bg-slate-700'
-                      : 'bg-amber-500',
-                ]"
-              >
+          <tr v-if="isLoading">
+            <td colspan="6" class="p-10 text-center text-slate-500">Loading users...</td>
+          </tr>
+          <template v-else-if="paginatedUsers.length > 0">
+            <tr v-for="user in paginatedUsers" :key="user.id" class="text-slate-300">
+              <td class="p-4 truncate cursor-pointer hover:text-blue-400" @click="openModal(user)">
+                {{ user.name }}
+              </td>
+              <td class="p-4 text-slate-500 truncate">{{ user.email }}</td>
+              <td class="p-4">
+                <span class="text-xs bg-white/5 px-2 py-1 rounded">{{ user.role_name }}</span>
+              </td>
+              <td class="p-4">
                 <span
+                  class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
                   :class="[
-                    'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
                     user.status === 'active'
-                      ? 'left-5'
+                      ? 'bg-blue-500/20 text-blue-400'
                       : user.status === 'inactive'
-                        ? 'left-1'
-                        : 'left-3',
+                        ? 'bg-slate-700/50 text-slate-400'
+                        : 'bg-amber-500/20 text-amber-400',
                   ]"
-                ></span>
-              </button>
-            </td>
-            <td class="p-4 text-right flex justify-end gap-3">
-              <button
-                @click="handleResetPassword(user)"
-                class="text-amber-500 hover:text-amber-400 transition"
-              >
-                Reset
-              </button>
-              <button @click="openModal(user)" class="text-slate-500 hover:text-white transition">
-                Edit
-              </button>
-            </td>
+                >
+                  {{ user.status }}
+                </span>
+              </td>
+              <td class="p-4">
+                <button
+                  @click="handleToggleStatus(user)"
+                  :class="[
+                    'w-8 h-4 rounded-full transition-colors relative',
+                    user.status === 'active'
+                      ? 'bg-blue-500'
+                      : user.status === 'inactive'
+                        ? 'bg-slate-700'
+                        : 'bg-amber-500',
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'absolute top-1 w-2 h-2 rounded-full bg-white transition-all',
+                      user.status === 'active'
+                        ? 'left-5'
+                        : user.status === 'inactive'
+                          ? 'left-1'
+                          : 'left-3',
+                    ]"
+                  ></span>
+                </button>
+              </td>
+              <td class="p-4 text-right flex justify-end gap-3">
+                <button
+                  @click="handleResetPassword(user)"
+                  class="text-amber-500 hover:text-amber-400 transition"
+                >
+                  Reset
+                </button>
+                <button @click="openModal(user)" class="text-slate-500 hover:text-white transition">
+                  Edit
+                </button>
+              </td>
+            </tr>
+          </template>
+          <tr v-else>
+            <td colspan="6" class="p-10 text-center text-slate-500 italic">No records found.</td>
           </tr>
         </tbody>
       </table>

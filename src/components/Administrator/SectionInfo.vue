@@ -95,6 +95,17 @@
         >
           Class Timetable
         </button>
+        <button
+          @click="activeTab = 'attendance'"
+          :class="[
+            'px-5 py-3 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'attendance'
+              ? 'border-blue-500 text-blue-400'
+              : 'border-transparent text-slate-400 hover:text-white',
+          ]"
+        >
+          Attendance Report
+        </button>
       </div>
 
       <div v-if="activeTab === 'students'" class="space-y-4">
@@ -174,6 +185,30 @@
               <div v-else class="text-xs text-slate-500 italic py-2">
                 No guardian info available.
               </div>
+            </div>
+
+            <div class="col-span-2 mt-2 pt-3 px-2 border-t border-white/5">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-slate-500">Attendance Rate</span>
+                <span class="text-xs font-bold text-white">
+                  {{ studentAttendanceReport ? studentAttendanceReport.percentage + '%' : '...' }}
+                </span>
+              </div>
+              <div class="w-full bg-slate-950 rounded-full h-2">
+                <div
+                  class="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                  :style="{
+                    width: (studentAttendanceReport ? studentAttendanceReport.percentage : 0) + '%',
+                  }"
+                ></div>
+              </div>
+              <p class="text-[10px] text-slate-500 mt-1">
+                {{
+                  studentAttendanceReport
+                    ? `${studentAttendanceReport.attended} of ${studentAttendanceReport.total} classes attended`
+                    : 'Calculating...'
+                }}
+              </p>
             </div>
 
             <div
@@ -393,6 +428,93 @@
           </div>
         </div>
       </div>
+
+      <div v-if="activeTab === 'attendance'" class="space-y-6">
+        <div v-if="attendanceLoading" class="p-10 text-center text-slate-500">
+          <div class="animate-pulse">Loading report...</div>
+        </div>
+
+        <div v-else class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div
+              class="bg-slate-900/50 border border-white/5 p-4 rounded-xl flex flex-col justify-center items-center"
+            >
+              <p class="text-slate-500 text-xs mb-1 uppercase tracking-wider">Class Average</p>
+              <p class="text-3xl font-bold text-white">{{ attendanceSummary.overall_avg }}%</p>
+            </div>
+
+            <div
+              class="md:col-span-3 bg-slate-900/50 border border-white/5 p-5 rounded-xl flex items-end gap-3 h-36"
+            >
+              <div
+                v-for="(count, range) in attendanceSummary.distribution"
+                :key="range"
+                class="flex-1 flex flex-col items-center h-full justify-end group"
+              >
+                <!-- Removed v-if to allow the hover trigger to exist even if count is 0 -->
+                <span
+                  class="text-[10px] text-blue-400 font-bold mb-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  {{ count }}
+                </span>
+
+                <div class="w-full max-w-[50px] bg-slate-800 rounded-t-sm relative h-full">
+                  <div
+                    class="bg-blue-500 w-full absolute bottom-0 rounded-t-sm transition-all duration-700 ease-out"
+                    :style="{
+                      height:
+                        (attendanceSummary.list.length > 0
+                          ? (count / attendanceSummary.list.length) * 100
+                          : 0) + '%',
+                    }"
+                  ></div>
+                </div>
+
+                <span class="text-[10px] text-slate-500 mt-2 uppercase">{{ range }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-white/5 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="text-xs text-slate-500 bg-slate-950/50">
+                <tr>
+                  <th class="px-4 py-3">Student Name</th>
+                  <th class="px-4 py-3 text-center">Sessions Attended</th>
+                  <th class="px-4 py-3 text-right">Attendance %</th>
+                </tr>
+              </thead>
+
+              <tbody
+                v-if="attendanceSummary.list && attendanceSummary.list.length > 0"
+                class="divide-y divide-white/5"
+              >
+                <tr
+                  v-for="stu in attendanceSummary.list"
+                  :key="stu.reg_number"
+                  class="hover:bg-slate-800/20 transition-colors"
+                >
+                  <td class="px-4 py-3 text-white font-medium">{{ stu.name }}</td>
+                  <td class="px-4 py-3 text-center text-slate-400">
+                    {{ stu.attended }} / {{ stu.total }}
+                  </td>
+                  <td class="px-4 py-3 text-right font-bold text-blue-400">
+                    {{ stu.percentage }}%
+                  </td>
+                </tr>
+              </tbody>
+
+              <tbody v-else>
+                <tr>
+                  <td colspan="3" class="px-4 py-10 text-center text-slate-600 italic">
+                    No attendance records found for this section.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div
@@ -442,6 +564,10 @@ const studentCurrentPage = ref(1)
 const selectedStudent = ref(null)
 const studentDetailsLoading = ref(false)
 
+const studentAttendanceReport = ref(null)
+const attendanceSummary = ref({ list: [], distribution: {}, overall_avg: 0 })
+const attendanceLoading = ref(false)
+
 const timetables = ref([])
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -456,6 +582,18 @@ const filteredSections = computed(() => {
     return matchSearch && matchStatus
   })
 })
+
+const fetchAttendanceSummary = async () => {
+  attendanceLoading.value = true
+  try {
+    const res = await api.get(`/sections/${selectedSection.value.id}/attendance-summary`)
+    attendanceSummary.value = res.data.data
+  } catch (err) {
+    errorMessage.value = 'Failed to load attendance report.'
+  } finally {
+    attendanceLoading.value = false
+  }
+}
 
 const lastPage = computed(() => Math.ceil(filteredSections.value.length / itemsPerPage) || 1)
 const paginatedSections = computed(() => {
@@ -509,8 +647,11 @@ const groupedTimetable = computed(() => {
   return grouped
 })
 
-watch(activeTab, () => {
+watch(activeTab, (val) => {
   selectedStudent.value = null
+  if (val === 'attendance') {
+    fetchAttendanceSummary()
+  }
 })
 watch([searchQuery, statusFilter], () => {
   currentPage.value = 1
@@ -559,11 +700,19 @@ const fetchSectionData = async (section) => {
 
 const viewStudent = async (stu) => {
   const id = stu.student_id || stu.id
-
   studentDetailsLoading.value = true
+  studentAttendanceReport.value = null
+
   try {
     const res = await api.get(`/students/${id}`)
     selectedStudent.value = res.data?.data?.student || res.data?.data || stu
+
+    if (selectedSection.value) {
+      const reportRes = await api.get(
+        `/students/${id}/attendance-report/${selectedSection.value.id}`,
+      )
+      studentAttendanceReport.value = reportRes.data?.data
+    }
   } catch (err) {
     errorMessage.value = 'Failed to load student details.'
   } finally {

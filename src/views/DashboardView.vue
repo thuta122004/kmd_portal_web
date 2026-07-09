@@ -7,7 +7,10 @@
         <h1 class="text-lg font-bold text-white tracking-tight">KMD Portal</h1>
         <div class="h-4 w-[1px] bg-white/10"></div>
         <div class="text-sm text-slate-400">
-          Welcome, <span class="text-white font-medium">{{ userData?.name }}</span>
+          Welcome,
+          <span class="text-white font-medium"
+            >{{ userData?.name }} ({{ userData?.role_name }})</span
+          >
         </div>
       </div>
 

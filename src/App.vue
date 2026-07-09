@@ -1,15 +1,17 @@
 <template>
   <div
-    class="relative min-h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden font-sans select-none antialiased"
+    class="relative min-h-screen w-screen flex items-center justify-center bg-[#050611] overflow-hidden font-sans select-none antialiased"
   >
     <div
-      class="absolute -top-12 -left-12 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 blur-[120px] opacity-40 mix-blend-screen animate-float-1"
+      class="absolute -top-12 -left-12 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-blue-600 to-indigo-900 blur-[120px] opacity-30 mix-blend-screen animate-float-1"
     ></div>
+
     <div
-      class="absolute -bottom-20 -right-12 w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-pink-500 to-purple-700 blur-[140px] opacity-35 mix-blend-screen animate-float-2"
+      class="absolute -bottom-20 -right-12 w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-indigo-800 to-violet-900 blur-[140px] opacity-30 mix-blend-screen animate-float-2"
     ></div>
+
     <div
-      class="absolute top-[25%] right-[20%] w-[350px] h-[350px] rounded-full bg-gradient-to-br from-emerald-400 to-teal-700 blur-[110px] opacity-25 mix-blend-screen animate-float-3"
+      class="absolute top-[25%] right-[20%] w-[350px] h-[350px] rounded-full bg-gradient-to-br from-blue-900 to-[#050611] blur-[110px] opacity-40 mix-blend-screen animate-float-3"
     ></div>
 
     <div class="w-full flex items-center justify-center">

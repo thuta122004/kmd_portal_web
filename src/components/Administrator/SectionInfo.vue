@@ -274,6 +274,84 @@
               class="bg-slate-900/50 border border-white/5 p-4 rounded-xl md:col-span-2 space-y-3"
             >
               <h4 class="text-sm font-semibold text-slate-300 border-b border-white/5 pb-2">
+                Attendance History
+              </h4>
+
+              <div v-if="studentLogsLoading" class="text-xs text-slate-500 italic py-2">
+                Loading attendance history...
+              </div>
+
+              <div v-else-if="studentAttendanceLogs.length > 0" class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                  <thead class="text-xs text-slate-500 bg-slate-950/50">
+                    <tr>
+                      <th class="px-3 py-2">Date</th>
+                      <th class="px-3 py-2">Subject</th>
+                      <th class="px-3 py-2">Status</th>
+                      <th class="px-3 py-2">Remark</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-white/5">
+                    <tr
+                      v-for="log in paginatedStudentLogs"
+                      :key="log.id"
+                      class="hover:bg-slate-800/20"
+                    >
+                      <td class="px-3 py-2 text-slate-400">{{ log.date }}</td>
+                      <td class="px-3 py-2 text-white">{{ log.subject_code }}</td>
+                      <td class="px-3 py-2">
+                        <span
+                          class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"
+                          :class="{
+                            'bg-emerald-500/20 text-emerald-400': log.status === 'present',
+                            'bg-rose-500/20 text-rose-400': log.status === 'absent',
+                            'bg-amber-500/20 text-amber-400': log.status === 'late',
+                            'bg-blue-500/20 text-blue-400': log.status === 'excused',
+                          }"
+                        >
+                          {{ log.status }}
+                        </span>
+                      </td>
+                      <td
+                        class="px-3 py-2 text-xs text-slate-500 truncate max-w-[150px]"
+                        :title="log.remark"
+                      >
+                        {{ log.remark || '-' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div v-if="studentLogsLastPage > 1" class="flex justify-end gap-2 mt-2">
+                  <button
+                    @click="studentLogsCurrentPage--"
+                    :disabled="studentLogsCurrentPage === 1"
+                    class="text-xs text-slate-500 hover:text-white disabled:opacity-30"
+                  >
+                    Prev
+                  </button>
+                  <span class="text-xs text-slate-500"
+                    >{{ studentLogsCurrentPage }} / {{ studentLogsLastPage }}</span
+                  >
+                  <button
+                    @click="studentLogsCurrentPage++"
+                    :disabled="studentLogsCurrentPage === studentLogsLastPage"
+                    class="text-xs text-slate-500 hover:text-white disabled:opacity-30"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+
+              <div v-else class="text-xs text-slate-500 italic py-2">
+                No attendance history found for this section.
+              </div>
+            </div>
+
+            <div
+              class="bg-slate-900/50 border border-white/5 p-4 rounded-xl md:col-span-2 space-y-3"
+            >
+              <h4 class="text-sm font-semibold text-slate-300 border-b border-white/5 pb-2">
                 Enrollment History
               </h4>
               <div
@@ -773,6 +851,11 @@ const subjectAttendanceLoading = ref(false)
 const subjectAttendanceCurrentPage = ref(1)
 const subjectAttendanceItemsPerPage = 5
 
+const studentAttendanceLogs = ref([])
+const studentLogsLoading = ref(false)
+const studentLogsCurrentPage = ref(1)
+const studentLogsPerPage = 5
+
 const timetables = ref([])
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -787,6 +870,15 @@ const filteredSections = computed(() => {
     return matchSearch && matchStatus
   })
 })
+
+const paginatedStudentLogs = computed(() => {
+  const start = (studentLogsCurrentPage.value - 1) * studentLogsPerPage
+  return studentAttendanceLogs.value.slice(start, start + studentLogsPerPage)
+})
+
+const studentLogsLastPage = computed(
+  () => Math.ceil(studentAttendanceLogs.value.length / studentLogsPerPage) || 1,
+)
 
 const paginatedSubjectAttendance = computed(() => {
   const data = subjectAttendanceData.value.students || []
@@ -980,6 +1072,7 @@ const viewStudent = async (stu) => {
   const id = stu.student_id || stu.id
   studentDetailsLoading.value = true
   isSubjectAttendanceLoading.value = true
+  studentLogsLoading.value = true
   studentAttendanceReport.value = null
   studentSubjectAttendance.value = []
 
@@ -1001,11 +1094,20 @@ const viewStudent = async (stu) => {
       )
       studentSubjectAttendance.value = studentData ? studentData.subjects : []
     }
+
+    if (selectedStudent.value && selectedStudent.value.user_id) {
+      const logRes = await api.get(`/attendances?user_id=${selectedStudent.value.user_id}`)
+
+      studentAttendanceLogs.value = logRes.data.data.attendances
+        .filter((log) => log.section_code === selectedSection.value.code)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+    }
   } catch (err) {
     errorMessage.value = 'Failed to load student details.'
   } finally {
     studentDetailsLoading.value = false
     isSubjectAttendanceLoading.value = false
+    studentLogsLoading.value = false
   }
 }
 

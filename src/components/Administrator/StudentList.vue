@@ -38,9 +38,9 @@
       <table class="w-full text-left text-sm table-fixed">
         <thead class="bg-white/5 text-slate-400 uppercase text-[10px] tracking-wider">
           <tr>
-            <th class="p-4 font-medium w-1/4">Name</th>
+            <th class="p-4 font-medium w-1/3">Name</th>
             <th class="p-4 font-medium w-1/4">Phone</th>
-            <th class="p-4 font-medium w-32">Age</th>
+            <th class="p-4 font-medium w-20">Age</th>
             <th class="p-4 font-medium w-1/4">Address</th>
             <th class="p-4 font-medium w-1/4">Reg Number</th>
             <th class="p-4 font-medium w-32">Gender</th>

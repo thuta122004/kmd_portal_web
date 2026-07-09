@@ -41,7 +41,7 @@
           <tr>
             <th class="p-4 font-medium w-1/4">Name</th>
             <th class="p-4 font-medium w-1/4">Email</th>
-            <th class="p-4 font-medium w-32">Role</th>
+            <th class="p-4 font-medium w-1/5">Role</th>
             <th class="p-4 font-medium w-32">Status</th>
             <th class="p-4 font-medium w-20">Toggle</th>
             <th class="p-4 font-medium w-20 text-right">Action</th>

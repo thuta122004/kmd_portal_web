@@ -3,13 +3,17 @@
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold text-white">Attendance Records</h2>
 
-      <div class="flex items-center gap-2">
-        <input
-          v-model="refreshStartDate"
-          type="date"
-          class="bg-slate-950 text-slate-300 text-xs px-3 py-2 rounded-lg border border-white/10 focus:border-white/20 outline-none"
-          title="Select date to backfill from (optional)"
-        />
+      <div class="flex items-end gap-3">
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+            Backfill from
+          </span>
+          <input
+            v-model="refreshStartDate"
+            type="date"
+            class="bg-slate-950 text-slate-300 text-xs px-3 py-2 rounded-lg border border-white/10 focus:border-white/20 outline-none w-26"
+          />
+        </div>
 
         <button
           @click="triggerGlobalRefresh"
@@ -36,6 +40,13 @@
         placeholder="Search by user, subject, or section..."
         class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-sm text-white placeholder-slate-600 outline-none focus:border-white/20 transition"
       />
+
+      <input
+        v-model="searchDate"
+        type="date"
+        class="w-36 px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 cursor-pointer"
+      />
+
       <select
         v-model="statusFilter"
         class="px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 cursor-pointer appearance-none"
@@ -196,6 +207,7 @@ const itemsPerPage = 5
 const remarkInput = ref('')
 const isRefreshing = ref(false)
 const refreshStartDate = ref('')
+const searchDate = ref('')
 
 const toast = ref({
   show: false,
@@ -232,13 +244,20 @@ const triggerGlobalRefresh = async () => {
 }
 
 const filteredAttendances = computed(() => {
-  return attendances.value.filter(
-    (a) =>
-      (a.user_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        a.subject_code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        a.section_code.toLowerCase().includes(searchQuery.value.toLowerCase())) &&
-      (statusFilter.value === 'all' || a.status === statusFilter.value),
-  )
+  const filtered = attendances.value.filter((a) => {
+    const matchesSearch =
+      a.user_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      a.subject_code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      a.section_code.toLowerCase().includes(searchQuery.value.toLowerCase())
+
+    const matchesStatus = statusFilter.value === 'all' || a.status === statusFilter.value
+
+    const matchesDate = !searchDate.value || a.date === searchDate.value
+
+    return matchesSearch && matchesStatus && matchesDate
+  })
+
+  return filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
 })
 
 const lastPage = computed(() => Math.ceil(filteredAttendances.value.length / itemsPerPage) || 1)
@@ -249,7 +268,7 @@ const paginatedAttendances = computed(() =>
   ),
 )
 
-watch([searchQuery, statusFilter], () => (currentPage.value = 1))
+watch([searchQuery, statusFilter, searchDate], () => (currentPage.value = 1))
 
 const fetchAttendances = async () => {
   isLoading.value = true

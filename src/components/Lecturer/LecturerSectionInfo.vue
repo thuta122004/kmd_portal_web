@@ -508,10 +508,14 @@ const filteredSections = computed(() => {
 const sectionAttendanceLogs = computed(() => {
   if (!selectedSection.value) return []
 
-  return allAttendances.value.filter((log) => {
+  const filtered = allAttendances.value.filter((log) => {
     const isCorrectSection = log.section_code === selectedSection.value.code
     const isMyRecord = Number(log.user_id) === Number(currentUserId.value)
     return isCorrectSection && isMyRecord
+  })
+
+  return filtered.sort((a, b) => {
+    return new Date(b.date) - new Date(a.date)
   })
 })
 

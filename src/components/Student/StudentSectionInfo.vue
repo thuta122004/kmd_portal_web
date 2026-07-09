@@ -418,9 +418,16 @@ const filteredSections = computed(() => {
 
 const sectionAttendanceLogs = computed(() => {
   if (!selectedSection.value) return []
-  return personalAttendances.value.filter(
+
+  const filtered = personalAttendances.value.filter(
     (log) => log.section_code === selectedSection.value.code && log.user_id === currentUserId.value,
   )
+  return filtered.sort((a, b) => {
+    const dateA = new Date(a.date)
+    const dateB = new Date(b.date)
+
+    return dateB - dateA
+  })
 })
 
 const groupedTimetable = computed(() => {

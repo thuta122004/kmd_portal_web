@@ -106,6 +106,17 @@
         >
           Attendance Report
         </button>
+        <button
+          @click="activeTab = 'subject-attendance'"
+          :class="[
+            'px-5 py-3 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'subject-attendance'
+              ? 'border-blue-500 text-blue-400'
+              : 'border-transparent text-slate-400 hover:text-white',
+          ]"
+        >
+          Subject Report
+        </button>
       </div>
 
       <div v-if="activeTab === 'students'" class="space-y-4">
@@ -584,6 +595,119 @@
           </div>
         </div>
       </div>
+
+      <div v-if="activeTab === 'subject-attendance'" class="space-y-6">
+        <div v-if="!activeSubject" class="space-y-4">
+          <h3 class="text-white font-medium">Select a Subject to view report</h3>
+
+          <div
+            v-if="sectionSubjects.length === 0"
+            class="p-10 rounded-xl text-center text-slate-500"
+          >
+            No subjects found for this section.
+          </div>
+
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              v-for="sub in sectionSubjects"
+              :key="sub.id"
+              @click="selectSubject(sub)"
+              class="group bg-slate-900/50 border border-white/5 p-5 rounded-xl cursor-pointer hover:border-blue-500/50 hover:bg-slate-900 transition-all"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 font-bold text-sm border border-blue-500/20"
+                >
+                  {{ getInitials(sub.name) }}
+                </div>
+                <span class="text-white font-medium group-hover:text-blue-400 transition">{{
+                  sub.name
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="space-y-4">
+          <button
+            @click="goBackToSubjects"
+            class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1"
+          >
+            ← Back to Subjects
+          </button>
+
+          <div v-if="subjectAttendanceLoading" class="p-10 text-center text-slate-500">
+            Loading attendance...
+          </div>
+
+          <div v-else-if="subjectAttendanceData.students.length > 0" class="space-y-4">
+            <div class="bg-slate-900/50 border border-white/5 rounded-xl overflow-hidden">
+              <div class="p-4 border-b border-white/5 flex justify-between items-center">
+                <h3 class="font-semibold text-white">
+                  {{ subjectAttendanceData.subject_name }} Report
+                </h3>
+              </div>
+
+              <table class="w-full text-left text-sm text-slate-300">
+                <thead class="text-xs text-slate-500 bg-slate-950/50">
+                  <tr>
+                    <th class="px-4 py-3">Student Name</th>
+                    <th class="px-4 py-3 text-center">Sessions</th>
+                    <th class="px-4 py-3 text-right">Attendance %</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                  <tr
+                    v-for="stu in paginatedSubjectAttendance"
+                    :key="stu.reg_number"
+                    class="hover:bg-slate-800/20"
+                  >
+                    <td class="px-4 py-3 text-white font-medium">{{ stu.student_name }}</td>
+                    <td class="px-4 py-3 text-center text-slate-400">
+                      {{ stu.attended }} / {{ stu.total }}
+                    </td>
+                    <td class="px-4 py-3 text-right font-bold text-blue-400">
+                      {{ stu.percentage }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div
+              v-if="subjectAttendanceLastPage > 1"
+              class="flex justify-between items-center text-xs text-slate-500 px-2"
+            >
+              <span
+                >Page {{ subjectAttendanceCurrentPage }} of {{ subjectAttendanceLastPage }}</span
+              >
+              <div class="flex gap-2">
+                <button
+                  @click="subjectAttendanceCurrentPage--"
+                  :disabled="subjectAttendanceCurrentPage === 1"
+                  class="hover:text-white transition disabled:opacity-30 px-2 py-1"
+                >
+                  Prev
+                </button>
+                <button
+                  @click="subjectAttendanceCurrentPage++"
+                  :disabled="subjectAttendanceCurrentPage === subjectAttendanceLastPage"
+                  class="hover:text-white transition disabled:opacity-30 px-2 py-1"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="p-10 border border-white/5 rounded-xl bg-slate-900/50 text-center text-slate-500"
+          >
+            No attendance records found for this subject.
+          </div>
+        </div>
+      </div>
     </div>
 
     <div
@@ -642,6 +766,13 @@ const attendanceItemsPerPage = 5
 const studentSubjectAttendance = ref([])
 const isSubjectAttendanceLoading = ref(false)
 
+const activeSubject = ref(null)
+const subjectAttendanceData = ref({ students: [], subject_name: '' })
+const subjectAttendanceLoading = ref(false)
+
+const subjectAttendanceCurrentPage = ref(1)
+const subjectAttendanceItemsPerPage = 5
+
 const timetables = ref([])
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -656,6 +787,62 @@ const filteredSections = computed(() => {
     return matchSearch && matchStatus
   })
 })
+
+const paginatedSubjectAttendance = computed(() => {
+  const data = subjectAttendanceData.value.students || []
+  const start = (subjectAttendanceCurrentPage.value - 1) * subjectAttendanceItemsPerPage
+  return data.slice(start, start + subjectAttendanceItemsPerPage)
+})
+
+const subjectAttendanceLastPage = computed(() => {
+  const data = subjectAttendanceData.value.students || []
+  return Math.ceil(data.length / subjectAttendanceItemsPerPage) || 1
+})
+
+const sectionSubjects = computed(() => {
+  const subjectsMap = new Map()
+  timetables.value.forEach((t) => {
+    if (t.subject_id) {
+      subjectsMap.set(t.subject_id, t.subject_name)
+    }
+  })
+  return Array.from(subjectsMap, ([id, name]) => ({ id, name }))
+})
+
+const selectSubject = (sub) => {
+  activeSubject.value = sub
+  subjectAttendanceCurrentPage.value = 1
+  fetchSubjectAttendance(sub.id)
+}
+
+const goBackToSubjects = () => {
+  activeSubject.value = null
+  subjectAttendanceData.value = { students: [], subject_name: '' }
+}
+
+const fetchSubjectAttendance = async (subjectId) => {
+  subjectAttendanceLoading.value = true
+  try {
+    const res = await api.get(
+      `/sections/${selectedSection.value.id}/subjects/${subjectId}/attendance-report`,
+    )
+    subjectAttendanceData.value = res.data.data
+  } catch (err) {
+    errorMessage.value = 'Failed to load subject attendance report.'
+  } finally {
+    subjectAttendanceLoading.value = false
+  }
+}
+
+const getInitials = (name) => {
+  if (!name) return '??'
+  return name
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
+}
 
 const paginatedAttendanceList = computed(() => {
   if (!attendanceSummary.value.list) return []
@@ -737,6 +924,11 @@ watch(activeTab, (val) => {
   selectedStudent.value = null
   if (val === 'attendance') {
     fetchAttendanceSummary()
+  }
+})
+watch(activeTab, (val) => {
+  if (val !== 'subject-attendance') {
+    goBackToSubjects()
   }
 })
 watch([searchQuery, statusFilter], () => {

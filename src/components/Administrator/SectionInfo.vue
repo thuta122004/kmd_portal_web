@@ -215,6 +215,54 @@
               class="bg-slate-900/50 border border-white/5 p-4 rounded-xl md:col-span-2 space-y-3"
             >
               <h4 class="text-sm font-semibold text-slate-300 border-b border-white/5 pb-2">
+                Subject-wise Attendance
+              </h4>
+
+              <div v-if="isSubjectAttendanceLoading" class="text-xs text-slate-500 italic py-2">
+                Loading subject data...
+              </div>
+
+              <div
+                v-else-if="studentSubjectAttendance && studentSubjectAttendance.length > 0"
+                class="overflow-x-auto"
+              >
+                <table class="w-full text-left text-sm text-slate-300">
+                  <thead class="text-xs text-slate-500 bg-slate-950/50">
+                    <tr>
+                      <th class="px-3 py-2 rounded-tl">Subject</th>
+                      <th class="px-3 py-2 text-center">Attended</th>
+                      <th class="px-3 py-2 text-right rounded-tr">Percentage</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-white/5">
+                    <tr
+                      v-for="(sub, index) in studentSubjectAttendance"
+                      :key="index"
+                      class="hover:bg-slate-800/20"
+                    >
+                      <td class="px-3 py-2 text-white font-medium">
+                        {{ sub.subject_name }}
+                      </td>
+                      <td class="px-3 py-2 text-center text-slate-400">
+                        {{ sub.attended }} / {{ sub.total }}
+                      </td>
+                      <td class="px-3 py-2 text-right font-bold text-blue-400">
+                        {{ sub.percentage }}%
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div v-else class="text-xs text-slate-500 italic py-2">
+                No subject attendance data available.
+              </div>
+            </div>
+
+            <div
+              class="bg-slate-900/50 border border-white/5 p-4 rounded-xl md:col-span-2 space-y-3"
+            >
+              <h4 class="text-sm font-semibold text-slate-300 border-b border-white/5 pb-2">
                 Enrollment History
               </h4>
               <div
@@ -591,6 +639,9 @@ const attendanceLoading = ref(false)
 const attendanceCurrentPage = ref(1)
 const attendanceItemsPerPage = 5
 
+const studentSubjectAttendance = ref([])
+const isSubjectAttendanceLoading = ref(false)
+
 const timetables = ref([])
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -736,7 +787,9 @@ const fetchSectionData = async (section) => {
 const viewStudent = async (stu) => {
   const id = stu.student_id || stu.id
   studentDetailsLoading.value = true
+  isSubjectAttendanceLoading.value = true
   studentAttendanceReport.value = null
+  studentSubjectAttendance.value = []
 
   try {
     const res = await api.get(`/students/${id}`)
@@ -747,11 +800,20 @@ const viewStudent = async (stu) => {
         `/students/${id}/attendance-report/${selectedSection.value.id}`,
       )
       studentAttendanceReport.value = reportRes.data?.data
+
+      const subRes = await api.get(
+        `/sections/${selectedSection.value.id}/student-subject-attendance`,
+      )
+      const studentData = subRes.data.data.find(
+        (s) => s.reg_number === selectedStudent.value.student_reg_number,
+      )
+      studentSubjectAttendance.value = studentData ? studentData.subjects : []
     }
   } catch (err) {
     errorMessage.value = 'Failed to load student details.'
   } finally {
     studentDetailsLoading.value = false
+    isSubjectAttendanceLoading.value = false
   }
 }
 

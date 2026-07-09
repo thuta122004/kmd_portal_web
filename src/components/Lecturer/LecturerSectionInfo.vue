@@ -645,7 +645,7 @@ const requestExcused = (log) => {
   remarkInput.value = ''
 
   showToast(
-    `Provide a reason for being excused for ${log.date}`,
+    `Provide a reason for being excused`,
     'warning',
     true,
     async () => {

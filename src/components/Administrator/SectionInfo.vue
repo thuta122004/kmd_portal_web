@@ -298,7 +298,12 @@
                       class="hover:bg-slate-800/20"
                     >
                       <td class="px-3 py-2 text-slate-400">{{ log.date }}</td>
-                      <td class="px-3 py-2 text-white">{{ log.subject_code }}</td>
+                      <td class="px-3 py-2">
+                        <div class="text-white">{{ log.subject_code }}</div>
+                        <div class="text-[10px] text-slate-500">
+                          {{ log.section_code }}
+                        </div>
+                      </td>
                       <td class="px-3 py-2">
                         <span
                           class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"

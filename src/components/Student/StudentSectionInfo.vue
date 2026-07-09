@@ -272,7 +272,7 @@
           <input
             v-model="remarkInput"
             type="text"
-            placeholder="Enter your excuse reason..."
+            placeholder="Enter reason..."
             class="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded text-xs text-white placeholder-slate-600 outline-none focus:border-blue-500/50 transition"
           />
         </div>

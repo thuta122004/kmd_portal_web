@@ -84,6 +84,12 @@
             >
               Attendances
             </button>
+            <button
+              @click="currentTab = 'academic-documents'"
+              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
+            >
+              Academic Documents
+            </button>
           </nav>
         </div>
       </div>
@@ -102,6 +108,7 @@
       <TimetableList v-if="currentTab === 'timetables'" />
       <EnrolmentList v-if="currentTab === 'enrolments'" />
       <AttendanceList v-if="currentTab === 'attendances'" />
+      <AcademicDocumentList v-if="currentTab === 'academic-documents'" />
     </section>
   </div>
 </template>
@@ -120,6 +127,7 @@ import AttachStudentList from './AttachStudentList.vue'
 import TimetableList from './TimetableList.vue'
 import EnrolmentList from './EnrolmentList.vue'
 import AttendanceList from './AttendanceList.vue'
+import AcademicDocumentList from './AcademicDocumentList.vue'
 
 const currentTab = ref('section-info')
 const activeSection = ref('info')

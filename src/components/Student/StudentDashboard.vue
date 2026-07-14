@@ -19,11 +19,29 @@
             </button>
           </nav>
         </div>
+        <div>
+          <button
+            @click="activeSection = activeSection === 'info' ? null : 'info'"
+            class="w-full text-xs font-semibold text-slate-500 uppercase tracking-widest px-4 mb-3 flex items-center justify-between hover:text-white transition-colors"
+          >
+            Information
+            <span>{{ activeSection === 'info' ? '−' : '+' }}</span>
+          </button>
+          <nav v-if="activeSection === 'info'">
+            <button
+              @click="currentTab = 'documents'"
+              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
+            >
+              My Documents
+            </button>
+          </nav>
+        </div>
       </div>
     </aside>
 
     <section class="flex-1 h-full overflow-y-auto">
       <StudentSectionInfo v-if="currentTab === 'sections'" />
+      <MyDocuments v-if="currentTab === 'documents'" />
     </section>
   </div>
 </template>
@@ -31,6 +49,7 @@
 <script setup>
 import { ref } from 'vue'
 import StudentSectionInfo from './StudentSectionInfo.vue'
+import MyDocuments from './MyDocuments.vue'
 
 const currentTab = ref('sections')
 const activeSection = ref('attendances')

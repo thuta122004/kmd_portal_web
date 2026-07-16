@@ -17,6 +17,12 @@
             >
               Section Info
             </button>
+            <button
+              @click="currentTab = 'announcements'"
+              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
+            >
+              Announcements
+            </button>
           </nav>
         </div>
       </div>
@@ -24,6 +30,7 @@
 
     <section class="flex-1 h-full overflow-y-auto">
       <LecturerSectionInfo v-if="currentTab === 'sections'" />
+      <Announcement v-if="currentTab === 'announcements'" />
     </section>
   </div>
 </template>
@@ -31,6 +38,7 @@
 <script setup>
 import { ref } from 'vue'
 import LecturerSectionInfo from './LecturerSectionInfo.vue'
+import Announcement from './Announcement.vue'
 
 const currentTab = ref('sections')
 const activeSection = ref('attendances')

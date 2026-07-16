@@ -58,12 +58,42 @@
                       />
                     </svg>
                   </a>
+
+                  <!-- Download Button with Loading State -->
                   <button
                     @click="downloadDocument(doc)"
-                    class="text-slate-400 hover:text-white transition"
+                    :disabled="downloadingIds.has(doc.id)"
+                    class="text-slate-400 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Download"
                   >
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                      v-if="downloadingIds.has(doc.id)"
+                      class="w-5 h-5 animate-spin"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                        fill="none"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      ></path>
+                    </svg>
+
+                    <svg
+                      v-else
+                      class="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -93,6 +123,7 @@ import api from '@/services/api'
 const documents = ref([])
 const isLoading = ref(false)
 const errorMessage = ref(null)
+const downloadingIds = ref(new Set())
 
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A'
@@ -129,13 +160,14 @@ const initializeDocuments = async () => {
 }
 
 const downloadDocument = async (doc) => {
+  downloadingIds.value.add(doc.id)
+
   try {
     const res = await api.get(`/academic-documents/${doc.id}/download`, {
       responseType: 'blob',
     })
 
     const contentType = res.headers['content-type']
-
     const blob = new Blob([res.data], { type: contentType })
     const url = window.URL.createObjectURL(blob)
 
@@ -155,6 +187,8 @@ const downloadDocument = async (doc) => {
   } catch (error) {
     console.error('Download failed:', error)
     errorMessage.value = 'Failed to download file. Please check permissions.'
+  } finally {
+    downloadingIds.value.delete(doc.id)
   }
 }
 

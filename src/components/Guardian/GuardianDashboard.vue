@@ -17,6 +17,12 @@
             >
               Attached Students
             </button>
+            <button
+              @click="currentTab = 'timetables'"
+              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-between text-slate-400 hover:text-white hover:bg-white/5"
+            >
+              Timetables
+            </button>
           </nav>
         </div>
       </div>
@@ -24,6 +30,7 @@
 
     <section class="flex-1 h-full overflow-y-auto">
       <AttachedStudents v-if="currentTab === 'attached-students'" />
+      <Timetables v-if="currentTab === 'timetables'" />
     </section>
   </div>
 </template>
@@ -31,6 +38,7 @@
 <script setup>
 import { ref } from 'vue'
 import AttachedStudents from './AttachedStudents.vue'
+import Timetables from './Timetables.vue'
 
 const currentTab = ref('attached-students')
 const activeSection = ref('info')

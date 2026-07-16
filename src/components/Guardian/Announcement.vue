@@ -64,7 +64,7 @@
                   : 'bg-purple-500/10 text-purple-400 border-purple-500/20',
               ]"
             >
-              {{ post.section_name || 'Global' }}
+              {{ post.section_name || 'Global (All Students)' }}
             </span>
             <span class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,7 +104,7 @@
           />
         </svg>
       </div>
-      <h3 class="text-lg font-medium text-white mb-1">Nothing to see here!</h3>
+      <h3 class="text-lg font-medium text-white mb-1">You're all caught up!</h3>
       <p class="text-sm text-slate-500">There are no new announcements.</p>
     </div>
   </div>
@@ -130,32 +130,72 @@ const formatDate = (dateString) => {
   })
 }
 
-const fetchLecturerAnnouncements = async () => {
+const fetchGuardianAnnouncements = async () => {
   isLoading.value = true
   errorMessage.value = null
+
   try {
     const userProfile = JSON.parse(localStorage.getItem('user') || '{}')
-    const currentUserId = userProfile.id
-    const currentUserName = userProfile.name
+    const userId = userProfile.id
 
-    const resAssignments = await api.get('/section-assignments')
-    const rawAssignments = resAssignments.data?.data?.assignments || resAssignments.data || []
+    if (!userId) throw new Error('No active login session found.')
 
-    const assignedSectionIds = rawAssignments
-      .filter(
-        (a) =>
-          a.status === 'active' &&
-          (a.lecturer_name?.toLowerCase() === currentUserName?.toLowerCase() ||
-            a.lecturer_id === currentUserId),
-      )
-      .map((a) => a.section_id)
+    const resGuardian = await api.get('/guardians', { params: { user_id: userId } })
+    const responseData =
+      resGuardian.data?.data?.guardians ||
+      resGuardian.data?.data?.guardian ||
+      resGuardian.data?.data
+
+    let compiledStudents = []
+    if (Array.isArray(responseData)) {
+      const targetRows = responseData.filter((row) => row && String(row.user_id) === String(userId))
+      const sourceRows = targetRows.length > 0 ? targetRows : responseData
+
+      sourceRows.forEach((row) => {
+        if (Array.isArray(row.students)) {
+          compiledStudents.push(...row.students)
+        } else if (row.student) {
+          compiledStudents.push(row.student)
+        }
+      })
+    } else if (responseData?.students) {
+      compiledStudents = responseData.students
+    }
+
+    const uniqueStudents = Array.from(new Map(compiledStudents.map((s) => [s.id, s])).values())
+
+    const activeSectionIds = new Set()
+    const activeSectionNames = new Set()
+
+    await Promise.all(
+      uniqueStudents.map(async (stu) => {
+        try {
+          const stuRes = await api.get(`/students/${stu.id}`)
+          const studentDetails = stuRes.data?.data?.student || stuRes.data?.data || stu
+
+          const history = studentDetails.enrolment_history || studentDetails.enrolments || []
+          history.forEach((enr) => {
+            if (enr.status === 'active') {
+              if (enr.section_id) activeSectionIds.add(enr.section_id)
+              if (enr.section) activeSectionNames.add(enr.section)
+            }
+          })
+        } catch (err) {
+          console.error(error)
+        }
+      }),
+    )
 
     const resAnnouncements = await api.get('/announcements')
     const allAnnouncements =
       resAnnouncements.data?.data?.announcements || resAnnouncements.data || []
 
     const relevantAnnouncements = allAnnouncements.filter(
-      (post) => !post.section_id || assignedSectionIds.includes(post.section_id),
+      (post) =>
+        !post.section_id ||
+        activeSectionIds.has(post.section_id) ||
+        activeSectionNames.has(post.section_name) ||
+        activeSectionNames.has(post.section_code),
     )
 
     announcements.value = relevantAnnouncements.sort((a, b) => {
@@ -172,5 +212,5 @@ const fetchLecturerAnnouncements = async () => {
   }
 }
 
-onMounted(fetchLecturerAnnouncements)
+onMounted(fetchGuardianAnnouncements)
 </script>

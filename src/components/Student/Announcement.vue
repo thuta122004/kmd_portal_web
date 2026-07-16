@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-3xl mx-auto pb-12 space-y-6 animate-fade-in">
     <div class="flex items-center justify-between pb-4 border-b border-white/5">
-      <h2 class="text-xl font-semibold text-white">Announcements</h2>
+      <h2 class="text-xl font-semibold text-white">Announcements Feed</h2>
     </div>
 
     <div

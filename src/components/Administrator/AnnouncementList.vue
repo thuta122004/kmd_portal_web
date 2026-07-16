@@ -28,7 +28,7 @@
         v-model="pinnedFilter"
         class="px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 cursor-pointer appearance-none"
       >
-        <option value="all">All Items</option>
+        <option value="all">All</option>
         <option value="pinned">Pinned</option>
         <option value="regular">Regular</option>
       </select>

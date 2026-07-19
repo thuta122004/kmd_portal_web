@@ -164,6 +164,7 @@ onMounted(() => {
       {
         id: props.assignmentToEdit.lecturer_id,
         name: props.assignmentToEdit.lecturer_name,
+        email: props.assignmentToEdit.lecturer_email,
       },
     ]
 

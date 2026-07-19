@@ -138,7 +138,7 @@ onMounted(() => {
       {
         id: props.enrolmentToEdit.section_id,
         name: props.enrolmentToEdit.section_name,
-        code: '',
+        code: props.enrolmentToEdit.section_code,
       },
     ]
     fetchSectionsOnly()

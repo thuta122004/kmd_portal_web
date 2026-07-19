@@ -41,7 +41,8 @@
               class="text-blue-400 font-medium bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded text-xs uppercase tracking-wide"
             >
               {{
-                sections.find((sec) => sec.id === form.section_id)?.code || 'Global (All Sections)'
+                sections.find((sec) => sec.id === form.section_id)?.code ||
+                (form.section_id ? 'Loading...' : 'Global (All Sections)')
               }}
             </span>
           </div>

@@ -33,6 +33,13 @@
       {{ errorMessage }}
     </div>
 
+    <div
+      v-if="successMessage"
+      class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-sm"
+    >
+      {{ successMessage }}
+    </div>
+
     <div class="flex flex-col sm:flex-row gap-3">
       <input
         v-model="searchQuery"
@@ -200,6 +207,7 @@ import api from '@/services/api'
 const attendances = ref([])
 const isLoading = ref(false)
 const errorMessage = ref(null)
+const successMessage = ref(null)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const currentPage = ref(1)
@@ -228,11 +236,17 @@ const statusClass = (status) => ({
 const triggerGlobalRefresh = async () => {
   isRefreshing.value = true
   errorMessage.value = null
+  successMessage.value = null
 
   try {
-    await api.post('/attendances/refresh', {
+    const res = await api.post('/attendances/refresh', {
       start_date: refreshStartDate.value,
     })
+
+    if (res.data?.status === 'success' || res.status === 200) {
+      const autoFilledCount = res.data?.data?.total_no_shows_auto_filled ?? 0
+      successMessage.value = `${res.data.message}. Total absences auto-filled: ${autoFilledCount}`
+    }
 
     await fetchAttendances()
     refreshStartDate.value = ''

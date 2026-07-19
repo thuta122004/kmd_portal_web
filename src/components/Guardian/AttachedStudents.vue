@@ -572,6 +572,7 @@ const requestExcused = (log) => {
         const res = await api.put(`/attendances/${log.id}`, {
           status: 'excused',
           remark: remarkInput.value,
+          source: 'guardian',
         })
         if (res.data?.status === 'success' || res.status === 200) {
           showToast('Request submitted successfully!', 'success')

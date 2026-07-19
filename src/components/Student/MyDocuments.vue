@@ -147,7 +147,10 @@ const initializeDocuments = async () => {
     }
 
     const res = await api.get('/academic-documents', {
-      params: { user_id: currentUserId },
+      params: {
+        user_id: currentUserId,
+        is_verified: true,
+      },
     })
 
     documents.value = res.data?.data?.documents || []

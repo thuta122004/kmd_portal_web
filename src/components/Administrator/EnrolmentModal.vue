@@ -34,7 +34,8 @@
         <div>
           <select
             v-model="form.section_id"
-            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 transition appearance-none"
+            :disabled="isEdit"
+            class="w-full px-4 py-2.5 bg-slate-950/50 border border-white/5 rounded-lg text-slate-400 text-sm outline-none focus:border-white/20 transition appearance-none disabled:opacity-50"
           >
             <option value="" disabled>Select Section</option>
             <option v-for="sec in sections" :key="sec.id" :value="sec.id">
